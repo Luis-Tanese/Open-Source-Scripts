@@ -69,9 +69,9 @@ function databaseinstall(){
     if(database.allRows("SELECT count(*) as Exist from INFORMATION_SCHEMA.TABLES where table_name = 'achievements';")[0][0] == "0"){
 	    database.nonQuery("CREATE TABLE IF NOT EXISTS achievements(
 	    playerId VARCHAR(17),
-        achievementId INT,
-        progress INT,
-        PRIMARY KEY (playerId, achievementId)
+      achievementId INT,
+      progress INT,
+      PRIMARY KEY (playerId, achievementId)
 	    );");
 	}
 }
