@@ -1,0 +1,17 @@
+/*
+    ===========================================
+    Cancel Damage Based on Weapon ID by Tanese
+    ===========================================
+    This script cancels damage if the killer's weapon ID is in the predefined array of item IDs.
+*/
+
+cancelDamageItemIDs = [1234, 5678, 91011]; // Replace these with actual item IDs.
+
+event onPlayerDamaged(victim, killer, cancel, damage, cause, limb){
+    if(killer.equipment != null){
+        weaponID = killer.equipment.item.id;
+        if(cancelDamageItemIDs.contains(weaponID)){
+            cancel = true;
+        }
+    }
+}
