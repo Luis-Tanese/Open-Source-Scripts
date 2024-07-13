@@ -44,7 +44,7 @@ achievementConfig = {
     "fish_10_times": {"id": 3, "name": "Fish 10 Times", "goal": 10, "reward": 150},
     "mine_10_rocks": {"id": 4, "name": "Mine 10 Rocks", "goal": 10, "reward": 100},
     "get_1000_experience": {"id": 5, "name": "Get 1000 Experience", "goal": 1000, "reward": 500}
-}
+};
 
 // Translations
 achievementCompleted = "Achievement Completed: {0}! You earned {1} experience.";
