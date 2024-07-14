@@ -51,19 +51,28 @@ damageBlockConfig = { // SELECT EITHER TRUE OR FALSE FOR WHAT TYPE OF DAMAGE YOU
 event onPlayerDamaged(victim, killer, cancel, damage, cause, limb){
     if(killer != null){
         if(damageBlockConfig[cause] == true){
-            weapon = player.equipment;
-            weaponID = weapon.id;
-            if(cancelDamageItemIDs.contains(weaponID)){
-                cancel = true;
-                return;
+            if(cause == "GUN" or cause == "MELEE"){
+                weapon = killer.equipment.item;
+                weaponID = weapon.id;
+                if(cancelDamageItemIDs.contains(weaponID)){
+                    logger.log("Player Damage Blocked: " + victim.name + " Cause: " + cause + " Damage: " + damage + " Killer: " + killer.name);
+                    cancel = true;
+                    return;
+                } else {
+                    return;
+                }
             } else {
-                return;
+                if(damageBlockConfig[cause] == true){
+                    logger.log("Player Damage Blocked: " + victim.name + " Cause: " + cause + " Damage: " + damage + " Killer: " + killer.name);
+                    cancel = true;
+                }
             }
         } else {
             return;
         }
     } else {
         if(damageBlockConfig[cause] == true){
+            logger.log("Player Damage Blocked: " + victim.name + " Cause: " + cause + " Damage: " + damage);
             cancel = true;
             return;
         }
