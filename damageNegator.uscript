@@ -1,0 +1,73 @@
+/* 
+    ========================
+    Damage Negator by Tanese
+    ========================
+    This script blocks damage based on user-configured causes and item IDs.
+    Users can set true or false for each cause to specify whether damage should be blocked.
+    (Suggested by g4t00 in Pluto Scripts)
+    Pluto Scripts: https://discord.gg/vVxYwJz6Hy
+*/
+
+/*
+    =============
+    Configuration
+    =============
+*/
+cancelDamageItemIDs = [138, 139]; // Replace these with item IDs that you don't want people to damage other players with (Will need either GUN or MELEE set to true depending on the item damage type)
+
+damageBlockConfig = { // SELECT EITHER TRUE OR FALSE FOR WHAT TYPE OF DAMAGE YOU WANT TO BE CANCELLED
+    "BLEEDING": true,
+    "BONES": false,
+    "FREEZING": false,
+    "BURNING": true,
+    "FOOD": false,
+    "WATER": false,
+    "GUN": true,
+    "MELEE": true,
+    "ZOMBIE": true,
+    "ANIMAL": true,
+    "SUICIDE": false,
+    "KILL": false,
+    "INFECTION": true,
+    "PUNCH": true,
+    "BREATH": false,
+    "ROADKILL": false,
+    "VEHICLE": false,
+    "GRENADE": true,
+    "SHRED": false,
+    "LANDMINE": true,
+    "ARENA": false,
+    "MISSILE": false,
+    "CHARGE": false,
+    "SPLASH": false,
+    "SENTRY": false,
+    "ACID": false,
+    "BOULDER": false,
+    "BURNER": false,
+    "SPIT": false,
+    "SPARK": false
+};
+
+event onPlayerDamaged(victim, killer, cancel, damage, cause, limb){
+    if(killer != null){
+        if(damageBlockConfig[cause] == true){
+            weapon = player.equipment;
+            weaponID = weapon.id;
+            if(cancelDamageItemIDs.contains(weaponID)){
+                logger.log("Player Damage Blocked: " + victim.name + " Cause: " + cause + " Damage: " + damage + " Killer: " + killer.name);
+                cancel = true;
+                return;
+            } else {
+                return;
+            }
+        } else {
+            return;
+        }
+    } else {
+        if(damageBlockConfig[cause] == true){
+            logger.log("Player Damage Blocked: " + victim.name + " Cause: " + cause + " Damage: " + damage);
+            cancel = true;
+            return;
+        }
+    }
+}
