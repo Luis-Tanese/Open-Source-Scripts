@@ -76,11 +76,14 @@ function databaseinstall(){
 	}
 }
 
-function increaseProgress(player, achievementKey, increment = 1){
+function increaseProgress(player, achievementKey, increment){
     achievement = achievementConfig[achievementKey];
     if(achievement == null){
         player.message("Invalid achievement key: " + achievementKey);
         return;
+    }
+    if(increment == null){
+        increment = 1;
     }
     dbCheck = database.firstRow("SELECT progress FROM achievements WHERE playerId=@p0 AND achievementId=@p1", player.id, achievement["id"]);
     if(dbCheck == null){
