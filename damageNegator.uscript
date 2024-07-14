@@ -54,7 +54,6 @@ event onPlayerDamaged(victim, killer, cancel, damage, cause, limb){
             weapon = player.equipment;
             weaponID = weapon.id;
             if(cancelDamageItemIDs.contains(weaponID)){
-                logger.log("Player Damage Blocked: " + victim.name + " Cause: " + cause + " Damage: " + damage + " Killer: " + killer.name);
                 cancel = true;
                 return;
             } else {
@@ -65,7 +64,6 @@ event onPlayerDamaged(victim, killer, cancel, damage, cause, limb){
         }
     } else {
         if(damageBlockConfig[cause] == true){
-            logger.log("Player Damage Blocked: " + victim.name + " Cause: " + cause + " Damage: " + damage);
             cancel = true;
             return;
         }
