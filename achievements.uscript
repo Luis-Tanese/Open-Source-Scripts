@@ -69,9 +69,9 @@ function databaseinstall(){
     if(database.allRows("SELECT count(*) as Exist from INFORMATION_SCHEMA.TABLES where table_name = 'achievements';")[0][0] == "0"){
 	    database.nonQuery("CREATE TABLE IF NOT EXISTS achievements(
 	    playerId VARCHAR(17),
-      achievementId INT,
-      progress INT,
-      PRIMARY KEY (playerId, achievementId)
+        achievementId INT,
+        progress INT,
+        PRIMARY KEY (playerId, achievementId)
 	    );");
 	}
 }
@@ -164,6 +164,9 @@ command increaseprogress(playerId, achievementKey, increment){
         if(achievement == null){
             player.message(invalidAchievementKey.format(achievementKey), "red");
             return;
+        }
+        if(increment == null){
+            increment = 1;
         }
         increaseProgress(toPlayer(playerId), achievementKey, increment.toNumber());
         player.message(progressIncreased.format(achievement["name"], increment), "green");
