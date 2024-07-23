@@ -4,6 +4,7 @@
     This script tracks player achievements in the game.
     Achievements include chopping trees, killing players, fishing, mining, and gaining experience.
     Player progress is saved in a database and experience is awarded upon achievement completion.
+    Once players are rewarded, a new cycle of achievements start.
 
     Achievements:
     =============
@@ -22,7 +23,6 @@
     - /addachievement <playerId> <achievementKey>: Command to manually add an achievement for a player.
     - /increaseprogress <playerId> <achievementKey> <increment>: Command to manually increase progress for an achievement.
     - /removeachievement <playerId> <achievementKey>: Command to manually remove an achievement for a player.
-    - /viewachievements: Command for players to view their achievements and progress.
 
     Modules Needed (Download from releases):
     ========================================
@@ -42,8 +42,7 @@ achievementConfig = {
     "chop_10_trees": {"id": 1, "name": "Chop 10 Trees", "goal": 10, "reward": 100},
     "kill_10_players": {"id": 2, "name": "Kill 10 Players", "goal": 10, "reward": 200},
     "fish_10_times": {"id": 3, "name": "Fish 10 Times", "goal": 10, "reward": 150},
-    "mine_10_rocks": {"id": 4, "name": "Mine 10 Rocks", "goal": 10, "reward": 100},
-    "get_1000_experience": {"id": 5, "name": "Get 1000 Experience", "goal": 1000, "reward": 500}
+    "mine_10_rocks": {"id": 4, "name": "Mine 10 Rocks", "goal": 10, "reward": 100}
 };
 
 // Translations
@@ -76,30 +75,37 @@ function databaseinstall(){
 	}
 }
 
-function increaseProgress(player, achievementKey, increment){
+function increaseProgress(player, achievementKey){
     achievement = achievementConfig[achievementKey];
-    if(achievement == null){
+    if (achievement == null) {
         player.message("Invalid achievement key: " + achievementKey);
         return;
     }
-    if(increment == null){
-        increment = 1;
-    }
+    increment = 1;
     dbCheck = database.firstRow("SELECT progress FROM achievements WHERE playerId=@p0 AND achievementId=@p1", player.id, achievement["id"]);
-    if(dbCheck == null){
-        database.nonQuery("INSERT INTO achievements (playerId, achievementId, progress) VALUES (@p0, @p1, @p2);", player.id, achievement["id"], increment);
+    if (dbCheck == null or dbCheck.length == 0) {
         progress = increment;
+        romp = progress / achievement["goal"];
+        progressPercent = math.min(100, romp * 100);
+        player.message(progressMessage.format(achievement["name"], progress, achievement["goal"], progressPercent), "yellow");
+        database.nonQuery("INSERT INTO achievements (playerId, achievementId, progress) VALUES (@p0, @p1, @p2);", player.id, achievement["id"], progress);
     } else {
-        newProgress = dbCheck[0] + increment;
-        database.nonQuery("UPDATE achievements SET progress=@p2 WHERE playerId=@p0 AND achievementId=@p1", player.id, achievement["id"], newProgress);
-        progress = newProgress;
-    }
-    progressPercent = math.min(100, math.floor((progress / achievement["goal"]) * 100));
-    player.message(progressMessage.format(achievement["name"], progress, achievement["goal"], progressPercent), "yellow");
-    if(progress >= achievement["goal"]){
-        rewardPlayer(player, achievement["reward"], achievement["name"]);
-    }
+        progress = dbCheck[0].toNumber();
+        progress += increment;
+        if (progress >= achievement["goal"]) {
+            rewardPlayer(player, achievement["reward"], achievement["name"]);
+            database.nonQuery("DELETE FROM achievements WHERE playerId=@p0 AND achievementId=@p1", player.id, achievement["id"]);
+        }
+        else{
+            romp = progress / achievement["goal"];
+            progressPercent = math.min(100, romp * 100);
+            player.message(progressMessage.format(achievement["name"], progress, achievement["goal"], progressPercent), "yellow");
+            logger.log(progressMessage.format(achievement["name"], progress, achievement["goal"], progressPercent));
+            database.nonQuery("UPDATE achievements SET progress=@p2 WHERE playerId=@p0 AND achievementId=@p1", player.id, achievement["id"], progress);
+        }
+    }    
 }
+
 
 function rewardPlayer(player, reward, achievementName){
     player.experience += reward;
@@ -111,7 +117,9 @@ event onTreeChopped(player){
 }
 
 event onPlayerKilled(killer, victim){
-    increaseProgress(killer, "kill_10_players");
+    if(killer != null){
+        increaseProgress(killer, "kill_10_players");
+    }
 }
 
 event onFishCaught(player){
@@ -120,23 +128,6 @@ event onFishCaught(player){
 
 event onRockMined(player){
     increaseProgress(player, "mine_10_rocks");
-}
-
-event onExperienceGained(player, amount){
-    dbCheck = database.firstRow("SELECT progress FROM achievements WHERE playerId=@p0 AND achievementId=@p1", player.id, achievementConfig["get_1000_experience"]["id"]);
-    if(dbCheck == null){
-        database.nonQuery("INSERT INTO achievements (playerId, achievementId, progress) VALUES (@p0, @p1, @p2);", player.id, achievementConfig["get_1000_experience"]["id"], amount);
-        progress = amount;
-    } else {
-        newProgress = dbCheck[0] + amount;
-        database.nonQuery("UPDATE achievements SET progress=@p2 WHERE playerId=@p0 AND achievementId=@p1", player.id, achievementConfig["get_1000_experience"]["id"], newProgress);
-        progress = newProgress;
-    }
-    progressPercent = math.min(100, math.floor((progress / achievementConfig["get_1000_experience"]["goal"]) * 100));
-    player.message(progressMessage.format(achievementConfig["get_1000_experience"]["name"], progress, achievementConfig["get_1000_experience"]["goal"], progressPercent), "yellow");
-    if(progress >= achievementConfig["get_1000_experience"]["goal"]){
-        rewardPlayer(player, achievementConfig["get_1000_experience"]["reward"], achievementConfig["get_1000_experience"]["name"]);
-    }
 }
 
 command addachievement(playerId, achievementKey){
@@ -148,28 +139,12 @@ command addachievement(playerId, achievementKey){
             return;
         }
         dbCheck = database.firstRow("SELECT progress FROM achievements WHERE playerId=@p0 AND achievementId=@p1", playerId, achievement["id"]);
-        if(dbCheck == null){
+        if(dbCheck == null or dbCheck.length == 0){
             database.nonQuery("INSERT INTO achievements (playerId, achievementId, progress) VALUES (@p0, @p1, 0);", playerId, achievement["id"]);
             player.message(achievementAdded.format(achievement["name"], playerId), "green");
         } else {
             player.message("Player already has this achievement.", "yellow");
         }
-    }
-}
-
-command increaseprogress(playerId, achievementKey, increment){
-    permission = "achievements.admin";
-    execute(){
-        achievement = achievementConfig[achievementKey];
-        if(achievement == null){
-            player.message(invalidAchievementKey.format(achievementKey), "red");
-            return;
-        }
-        if(increment == null){
-            increment = 1;
-        }
-        increaseProgress(toPlayer(playerId), achievementKey, increment.toNumber());
-        player.message(progressIncreased.format(achievement["name"], increment), "green");
     }
 }
 
@@ -186,33 +161,19 @@ command removeachievement(playerId, achievementKey){
     }
 }
 
-command viewachievements(){
+command increaseprogress(playerId, achievementKey, increment){
+    permission = "achievements.admin";
     execute(){
-        dbCheck = database.allRows("SELECT achievementId, progress FROM achievements WHERE playerId=@p0", player.id);
-        if(dbCheck == null || dbCheck.length == 0){
-            player.message(noAchievements, "yellow");
+        achievement = achievementConfig[achievementKey];
+        if(achievement == null){
+            player.message(invalidAchievementKey.format(achievementKey), "red");
             return;
         }
-        message = viewAchievementsHeader;
-        foreach(row in dbCheck){
-            achievementId = row[0];
-            progress = row[1];
-            achievementKey = getAchievementKeyById(achievementId);
-            if(achievementKey != null){
-                achievement = achievementConfig[achievementKey];
-                progressPercent = math.min(100, math.floor((progress / achievement["goal"]) * 100));
-                message += "{0}: {1}/{2} ({3}%)\n".format(achievement["name"], progress, achievement["goal"], progressPercent);
-            }
+        if(increment == null){
+            increment = 1;
         }
-        player.message(message, "green");
+        target = toPlayer(playerId);
+        increaseProgress(target, achievementKey, increment);
+        player.message(progressIncreased.format(achievement["name"], increment), "green");
     }
-}
-
-function getAchievementKeyById(id){
-    foreach(key in achievementConfig){
-        if(achievementConfig[key]["id"] == id){
-            return key;
-        }
-    }
-    return null;
 }
