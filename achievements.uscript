@@ -12,7 +12,6 @@
     - Kill 10 players
     - Fish 10 times
     - Mine 10 rocks
-    - Get 1000 experience
 
     Permissions:
     ============
@@ -34,7 +33,6 @@
     - kill_10_players: Kill 10 players
     - fish_10_times: Fish 10 times
     - mine_10_rocks: Mine 10 rocks
-    - get_1000_experience: Get 1000 experience
 */
 
 // Config
