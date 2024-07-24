@@ -35,28 +35,28 @@ properRaidProt = "Invalid Usage! Use /blockraid <on/off> or /blockraid for info"
 raidProt = false;
 
 event onBarricadeDamaged(player, barricade, damage, cause, cancel){
-    if(raidProt == true){
+    if(raidProt){
         player.message(raidingOff, "red", messageIcon);
         cancel = true;
     }
 }
 
 event onStructureDamaged(player, structure, damage, cause, cancel){
-    if(raidProt == true){
+    if(raidProt){
         player.message(raidingOff, "red", messageIcon);
         cancel = true;
     }
 }
 
 event onBarricadeDestroy(player, barricade, cancel){
-    if(raidProt == true){
+    if(raidProt){
         player.message(raidingOff, "red", messageIcon);
         cancel = true;
     }
 }
 
 event onStructureDestroy(player, structure, *cancel){
-    if(raidProt == true){
+    if(raidProt){
         player.message(raidingOff, "red", messageIcon);
         cancel = true;
     }
