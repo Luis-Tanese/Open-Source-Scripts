@@ -50,8 +50,6 @@ progressIncreased = "Increased progress for achievement {0} by {1}.";
 achievementRemoved = "Achievement {0} removed for player {1}.";
 invalidAchievementKey = "Invalid achievement key: {0}.";
 progressMessage = "Progress on {0}: {1}/{2} ({3}%)";
-viewAchievementsHeader = "Your Achievements:\n";
-noAchievements = "You have no achievements yet.";
 
 event onLoad(){
     serverpackageinstall();
