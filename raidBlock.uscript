@@ -1,0 +1,140 @@
+/* 
+    Raid Block Script by Tanese
+    ===========================
+    Simple raid block script with commands
+    Every time script is reloaded or server is restarted, raiding protection will be turned off
+
+    Permissions:
+    ============
+    - raidBlock.admin: Allows admins to turn on or off raiding
+
+    Commands:
+    =========
+    - /blockraid <on / off>: For when you want to block raids; /blockraid on turns on raiding protecting and /blockraid off turns off raiding protection; when done /blockraid it tells you the status, if its on or not
+
+    Modules Needed (Download from releases):
+    ========================================
+    - uScriptExtended by MolyiEZ: https://github.com/MolyiEZ/uScriptExtended
+*/
+
+/* 
+    Translations:
+*/
+
+messageIcon = "https://i.imgur.com/SFdYgXJ.png";
+raidingOff = "Raid protection is on. You cannot raid this building";
+raidProtOn = "Raid protection turned on!"; 
+raidProtOff = "Raid protection turned off!";
+raidProtInfo = "Currently raid protection is {0}!";
+properRaidProt = "Invalid Usage! Use /blockraid <on/off> or /blockraid for info";
+
+/* 
+    CODE (Do not change anything from here):
+*/
+
+raidProt = false;
+
+event onBarricadeDamaged(player, barricade, damage, cause, cancel){
+    if(raidProt == true){
+        player.message(raidingOff, "red", messageIcon);
+        cancel = true;
+    }
+}
+
+event onStructureDamaged(player, structure, damage, cause, cancel){
+    if(raidProt == true){
+        player.message(raidingOff, "red", messageIcon);
+        cancel = true;
+    }
+}
+
+event onBarricadeDestroy(player, barricade, cancel){
+    if(raidProt == true){
+        player.message(raidingOff, "red", messageIcon);
+        cancel = true;
+    }
+}
+
+event onStructureDestroy(player, structure, *cancel){
+    if(raidProt == true){
+        player.message(raidingOff, "red", messageIcon);
+        cancel = true;
+    }
+}
+
+command blockraid(arg){
+    permission = "raidBlock.admin";
+    allowedCaller = "both";
+    execute(){
+        if(arg == null){
+            if(player != null){
+                if(raidProt){
+                    player.message(raidProtInfo.format("On"), "yellow", messageIcon);
+                    return;
+                } else {
+                    player.message(raidProtInfo.format("Off"), "yellow", messageIcon);
+                    return;
+                }
+            } else {
+                if(raidProt){
+                    logger.log(raidProtInfo.format("On"));
+                    return;
+                } else {
+                    logger.log(raidProtInfo.format("Off"));
+                    return;
+                }
+            }
+        }
+        if(arg == "on"){
+            if(player != null){
+                if(raidProt){
+                    player.message(raidProtInfo.format("On"), "yellow", messageIcon);
+                    return;
+                } else {
+                    player.message(raidProtOn, "yellow", messageIcon);
+                    raidProt = true;
+                    return;
+                }
+            } else {
+                if(raidProt){
+                    logger.log(raidProtInfo.format("On"));
+                    return;
+                } else {
+                    logger.log(raidProtOn);
+                    raidProt = true;
+                    return;
+                }
+            }
+        }
+        if(arg == "off"){
+            if(player != null){
+                if(!raidProt){
+                    player.message(raidProtInfo.format("Off"), "yellow", messageIcon);
+                    return;
+                } else {
+                    player.message(raidProtOff, "yellow", messageIcon);
+                    raidProt = false;
+                    return;
+                }
+            } else {
+                if(!raidProt){
+                    logger.log(raidProtInfo.format("Off"));
+                    return;
+                } else {
+                    logger.log(raidProtOff);
+                    raidProt = false;
+                    return;
+                }
+            }
+        }
+        if(arg != "on" or arg != "off"){
+            if(player != null){
+                player.message(properRaidProt, "red", messageIcon);
+                return;
+            } else {
+                logger.log(properRaidProt);
+                return;
+            }
+        }
+    }
+}
