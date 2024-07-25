@@ -1,0 +1,290 @@
+/* 
+    uScript Player Library by Tanese
+    ================================
+    A player library to store player information.
+    Can be used in various different scripts to get a player's data and saves it to a database.
+    If you encounter any problems, please DM me in discord.
+
+    ===========================
+    TABLE OF CONTENTS
+    ===========================
+    1. Database Initialization
+    2. Player Data Management
+    3. Player Events
+    4. Commands
+    5. Permissions
+    6. Example Scripts
+
+    ===========================
+    1. DATABASE INITIALIZATION
+    ===========================
+    Initializes the `playerLibrary` table in the database if it doesn't already exist. 
+    This table stores various statistics for each player, including their ID, name, image, 
+    and numerous game-related metrics (e.g., players healed, animals killed, barricades built, etc.).
+    I will work on a discord bot that actually tracks player's metrics and displays them with a command.
+
+    ===========================
+    2. PLAYER DATA MANAGEMENT
+    ===========================
+    A map called `playerData` is used to store player statistics in memory. 
+    This data is periodically synchronized with the database every 1800 seconds and 
+    whenever a player joins or leaves the server to avoid lag spikes or decreasing performance.
+
+    ===========================
+    3. PLAYER EVENTS
+    ===========================
+    You can add more events as you please, just make sure to update the code accordingly
+
+    ===========================
+    4. COMMANDS
+    ===========================
+    Currently one command is available for this script
+    - /updateplayers: Updates the database manually in case of server shutdown and can be used in console aswell
+
+    ===========================
+    5. PERMISSIONS
+    ===========================
+    Currently one permission is available for this script
+    - playerLibrary.admin: Allows admistrators to update the database manually
+
+    ===========================
+    6. EXAMPLE SCRIPTS
+    ===========================
+    Here are some example scripts that can be used with the player library:
+    Webhook that logs when a player joins:
+    https://pastebin.com/7qm53fge
+
+    Example that console prints all data:
+    https://pastebin.com/Rq8dhsaP
+*/
+
+
+event onLoad(){
+    databaseInstall();
+}
+
+function databaseInstall() {
+    if (database.allRows("SELECT count(*) as Exist from INFORMATION_SCHEMA.TABLES where table_name = 'playerLibrary';")[0][0] == "0") {
+        database.nonQuery("CREATE TABLE IF NOT EXISTS playerLibrary(
+            playerId VARCHAR(17) PRIMARY KEY,
+            playerName VARCHAR(255),
+            playerImage VARCHAR(255),
+            playersHealed INT DEFAULT 0,
+            animalsKilled INT DEFAULT 0,
+            barricadesBuilt INT DEFAULT 0,
+            structuresBuilt INT DEFAULT 0,
+            barricadesDestroyed INT DEFAULT 0,
+            structuresDestroyed INT DEFAULT 0,
+            fishesCaught INT DEFAULT 0,
+            deaths INT DEFAULT 0,
+            kills INT DEFAULT 0,
+            headshots INT DEFAULT 0,
+            megaZombiesKilled INT DEFAULT 0,
+            zombiesKilled INT DEFAULT 0,
+            plantsHarvested INT DEFAULT 0,
+            timesChatted INT DEFAULT 0,
+            totalDamageDealt INT DEFAULT 0,
+            totalDamageReceived INT DEFAULT 0,
+            totalExperienceReceived INT DEFAULT 0,
+            currentExperienceTotal INT DEFAULT 0,
+            timesJoined INT DEFAULT 0,
+            timesLeft INT DEFAULT 0,
+            totalTimeInServer INT DEFAULT 0,
+            rocksMined INT DEFAULT 0,
+            timesRespawned INT DEFAULT 0,
+            treesChopped INT DEFAULT 0
+        );");
+    }
+}
+
+playerData = map();
+
+event onInterval(1800){
+    syncWithDB();
+}
+
+function syncWithDB(){
+    foreach(key, value in playerData.keys){
+        updateDatabase(key, playerData.get(key));
+    }
+}
+
+function updateDatabase(playerId, data){
+    database.nonQuery("UPDATE playerLibrary SET playerName=@p1, playerImage=@p2, playersHealed=@p3, animalsKilled=@p4, barricadesBuilt=@p5, structuresBuilt=@p6, barricadesDestroyed=@p7, structuresDestroyed=@p8, fishesCaught=@p9, deaths=@p10, kills=@p11, headshots=@p12, megaZombiesKilled=@p13, zombiesKilled=@p14, plantsHarvested=@p15, timesChatted=@p16, totalDamageDealt=@p17, totalDamageReceived=@p18, totalExperienceReceived=@p19, currentExperienceTotal=@p20, timesJoined=@p21, timesLeft=@p22, totalTimeInServer=@p23, rocksMined=@p24, timesRespawned=@p25, treesChopped=@p26 WHERE playerId=@p0", 
+    playerId, data["playerName"], data["playerImage"], data["playersHealed"], data["animalsKilled"], data["barricadesBuilt"], data["structuresBuilt"], data["barricadesDestroyed"], data["structuresDestroyed"], data["fishesCaught"], data["deaths"], data["kills"], data["headshots"], data["megaZombiesKilled"], data["zombiesKilled"], data["plantsHarvested"], data["timesChatted"], data["totalDamageDealt"], data["totalDamageReceived"], data["totalExperienceReceived"], data["currentExperienceTotal"], data["timesJoined"], data["timesLeft"], data["totalTimeInServer"], data["rocksMined"], data["timesRespawned"], data["treesChopped"]);
+}
+
+event onPlayerJoined(player){
+    joinTime = time.now.totalSeconds;
+    playerId = player.id;
+    if(playerData.containsKey(playerId)){
+        data = playerData.get(playerId);
+        data["joinTime"] = joinTime;
+        data["timesJoined"] = data["timesJoined"] + 1;
+    } else {
+        dbData = database.firstRow("SELECT * FROM playerLibrary WHERE playerId=@p0", playerId);
+        if(dbData != null or dbData.length != 0){
+            dbData["timesJoined"] = dbData["timesJoined"] + 1;
+            playerData.set(playerId, dbData);
+        } else {
+            newData = map();
+            newData["playerName"] = player.name;
+            newData["playerImage"] = player.steamProfile.avatarUrl;
+            newData["playersHealed"] = 0;
+            newData["animalsKilled"] = 0;
+            newData["barricadesBuilt"] = 0;
+            newData["structuresBuilt"] = 0;
+            newData["barricadesDestroyed"] = 0;
+            newData["structuresDestroyed"] = 0;
+            newData["fishesCaught"] = 0;
+            newData["deaths"] = 0;
+            newData["kills"] = 0;
+            newData["headshots"] = 0;
+            newData["megaZombiesKilled"] = 0;
+            newData["zombiesKilled"] = 0;
+            newData["plantsHarvested"] = 0;
+            newData["timesChatted"] = 0;
+            newData["totalDamageDealt"] = 0;
+            newData["totalDamageReceived"] = 0;
+            newData["totalExperienceReceived"] = 0;
+            newData["currentExperienceTotal"] = 0;
+            newData["timesJoined"] = 1;
+            newData["timesLeft"] = 0;
+            newData["totalTimeInServer"] = 0;
+            newData["rocksMined"] = 0;
+            newData["timesRespawned"] = 0;
+            newData["treesChopped"] = 0;
+            newData["joinTime"] = joinTime;
+            playerData.set(playerId, newData);
+            database.nonQuery("INSERT INTO playerLibrary(playerId, playerName, playerImage, timesJoined) VALUES (@p0, @p1, @p2, @p3)", playerId, player.name, player.steamProfile.avatarUrl, 1);
+        }
+    }
+}
+
+event onPlayerQuit(player){
+    leaveTime = time.now.totalSeconds;
+    playerId = player.id;
+    if(playerData.containsKey(playerId)){
+        data = playerData.get(playerId);
+        joinTime = data["joinTime"];
+        sessionTime = leaveTime - joinTime;
+        data["totalTimeInServer"] = data["totalTimeInServer"] + sessionTime;
+        data["timesLeft"] = data["timesLeft"] + 1;
+        updateDatabase(playerId, data);
+        playerData.remove(playerId);
+    }
+}
+
+function updatePlayerData(playerId, key, value) {
+    if (playerData.containsKey(playerId)) {
+        local data = playerData.get(playerId);
+        data[key] = value;
+    }
+}
+
+event onAid(player){
+    data = playerData.get(player.id);
+    data["playerHealed"] = data["playerHealed"] + 1;
+}
+
+event onAnimalKilled(player){
+    data = playerData.get(player.id);
+    data["animalsKilled"] = data["animalsKilled"] + 1;
+}
+
+event onBarricadeBuild(player){
+    data = playerData.get(player.id);
+    data["barricadesBuilt"] = data["barricadesBuilt"] + 1;
+}
+
+event onBarricadeDestroy(player){
+    data = playerData.get(player.id);
+    data["structuresBuilt"] = data["structuresBuilt"]  + 1;
+}
+
+event onStructureBuild(player){
+    data = playerData.get(player.id);
+    data["structuresBuilt"] = data["structuresBuilt"] + 1;
+}
+
+event onStructureDestroy(player){
+    data = playerData.get(player.id);
+    data["structuresDestroyed"] = data["structuresDestroyed"] + 1;
+}
+
+event onFishCaught(player){
+    data = playerData.get(player.id);
+    data["fishesCaught"] = data["fishesCaught"] + 1;
+}
+
+event onPlayerDeath(victim, killer){
+    if(killer != null and killer.id != victim.id){
+        killerData = playerData.get(killer.id);
+        killerData["kills"] = killerData["kills"] + 1;
+    }
+    victimData = playerData.get(victim.id);
+    victimData["kills"] = victimData["kills"] + 1;
+}
+
+event onPlayerDamaged(victim, killer, cancel, damage, cause, limb){
+    if(killer != null and killer.id != victim.id){
+        killerData = playerData.get(killer.id);
+        killerData["totalDamageDealt"] = killerData["totalDamageDealt"] + damage;
+        if(limb == "SKULL"){
+            killerData["headshots"] = killerData["headshots"] + 1;
+        }
+    }
+    data = playerData.get(victim.id);
+    data["totalDamageReceived"] = data["totalDamageReceived"] + damage;
+}
+
+event onMegaZombieKilled(player){
+    data = playerData.get(player.id);
+    data["megaZombiesKilled"] = data["megaZombiesKilled"] + 1;
+}
+
+event onZombieKilled(player){
+    data = playerData.get(player.id);
+    data["zombiesKilled"] = data["zombiesKilled"] + 1;
+}
+
+event onPlantHarvested(player){
+    data = playerData.get(player.id);
+    data["plantsHarvested"] = data["plantsHarvested"] + 1;
+}
+
+event onPlayerChatted(player){
+    data = playerData.get(player.id);
+    data["timesChatted"] = data["timesChatted"] + 1;
+}
+
+event onPlayerExperienceUpdated(player){
+    data = playerData.get(player.id);
+    data["totalExperienceReceived"] = data["totalExperienceReceived"] + player.experience - data["currentExperienceTotal"];
+    data["currentExperienceTotal"] = player.experience;
+}
+
+event onRockMined(player){
+    data = playerData.get(player.id);
+    data["rocksMined"] = data["rocksMined"] + 1;
+}
+
+event onPlayerRespawned(player){
+    data = playerData.get(player.id);
+    data["timesRespawned"] = data["timesRespawned"] + 1;
+}
+
+event onTreeChopped(player){
+    data = playerData.get(player.id);
+    data["treesChopped"] = data["treesChopped"] + 1;
+}
+
+command updateplayers(){
+    permission = "playerLibrary.admin";
+    allowedCaller = "both";
+    execute(){
+        foreach(key, value in playerData.keys){
+            updateDatabase(key, playerData.get(key));
+        }
+    }
+}
