@@ -2,8 +2,10 @@
     uScript Player Library by Tanese
     ================================
     A player library to store player information.
+    Mainly used in some of my scripts.
     Can be used in various different scripts to get a player's data and saves it to a database.
     If you encounter any problems, please DM me in discord.
+    This is not completed, please don't use it right now!
 
     ===========================
     TABLE OF CONTENTS
