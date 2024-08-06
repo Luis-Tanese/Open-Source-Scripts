@@ -1,0 +1,223 @@
+/*
+	Door Manager by Tanese
+	======================
+	This script allows players to manage doors and gates in the game. Players can whitelist other players to open their doors,
+	and the doors automatically close after a specified time.
+	Players can also open and close doors by punching them.
+	
+	========================
+	Configuration:
+	========================
+	- doorCloseTime: Time in seconds after which doors automatically close.
+
+	========================
+	Commands:
+	========================
+	- /whitelistdoor <player>: Whitelist a player to open the door. 
+	  Permission: doorManager.whitelist
+
+	- /removewhitelistdoor <player>: Remove a player from the whitelist.
+	  Permission: doorManager.whitelist
+*/
+
+doorCloseTime = 5; // Time in seconds after which doors automatically close
+
+doorData = map();
+whitelistData = map();
+
+event onPlayerGestured(player, gesture) 
+{
+	if (gesture == "PUNCH_RIGHT")
+	{
+		barr = player.look.getBarricade();
+		if (barr != null)
+		{
+			if (barr.itemType != "DOOR" or barr.itemType != "GATE") 
+			{
+				return;
+			}
+			door = barr;
+			if (door.owner == player.id or isPlayerWhitelisted(door.instanceId, player.id) == true)
+			{
+				doorOpen(door.instanceId);
+			}
+			else
+			{
+				return;
+			}
+		}
+	}
+	if (gesture == "PUNCH_LEFT")
+	{
+		barr = player.look.getBarricade();
+		if (barr != null)
+		{
+			if (barr.itemType != "DOOR" or barr.itemType != "GATE") 
+			{
+				if (barr.owner == player.id or isPlayerWhitelisted(barr.instanceId, player.id) == true)
+				{
+					doorClose(barr.instanceId);
+				}
+			}
+		}
+	}
+}
+
+function doorOpen(doorId)
+{
+	door = server.findBarricade(doorId);
+	if (door != null)
+	{
+		door.door.open();
+		doorData.set(doorId, time.now.totalSeconds);
+	}
+}
+
+function doorClose(doorId)
+{
+	door = server.findBarricade(doorId);
+	if (door != null)
+	{
+		door.door.close();
+	}
+}
+
+event onInterval(1)
+{
+	currentTime = time.now.totalSeconds;
+	doorsToClose = [];
+	foreach (doorId in doorData.keys)
+	{
+		lastOpenTime = doorData.get(doorId);
+		totalTime = currentTime - lastOpenTime
+		if (totalTime >= doorCloseTime)
+		{
+			doorsToClose.add(doorId);
+		}
+	}
+	foreach (doorId in doorsToClose)
+	{
+		doorClose(doorId);
+		doorData.remove(doorId);
+	}
+}
+
+function isPlayerWhitelisted(doorId, playerId) 
+{
+	whitelist = whitelistData.get(doorId);
+	if (whitelist != null and whitelist.contains(playerId))
+    {
+		return true;
+	}
+	return false;
+}
+
+command whitelistdoor(target)
+{ 
+	permission = "doorManager.whitelist";
+	execute() 
+	{
+		barr = player.look.getBarricade();
+		if (barr != null)
+		{
+			if (arguments[0] == null)
+			{
+			player.message("Wrong Usage! Correct Usage: /whitelistdoor <player>");
+			return;
+			}
+			target = toPlayer(target);
+			if (target == null)
+			{
+				player.message("No player found!");
+				return;
+			}
+			if (barr.itemType != "DOOR" or barr.itemType != "GATE") 
+            {
+				player.message("You must be looking at a door or gate to use this command.");
+				return;
+			}
+			door = barr;
+			if (door.owner == player.id)
+			{
+				targetPlayerId = target.id;
+				doorId = door.instanceId;
+				if (whitelistData.get(doorId) == null)
+				{
+					whitelistData.set(doorId, []);
+				}
+				whitelist = whitelistData.get(doorId);
+				if (!whitelist.contains(targetPlayerId))
+				{
+					whitelist.add(targetPlayerId);
+					whitelistData.set(doorId, whitelist);
+					player.message("Player " + target.name + " has been whitelisted for this door.");
+				}
+				else
+				{
+					player.message("Player " + targetPlayerId + " is already whitelisted for this door.");
+				}
+			}
+			else
+			{
+				player.message("You do not own this door.");
+			}
+		}
+		else
+		{
+			player.message("You must be looking at a door or gate to use this command.");
+		}
+	}
+}
+
+command removewhitelistdoor(target)
+{
+	permission = "doorManager.whitelist";
+	execute()
+	{
+		barr = player.look.getBarricade();
+		if (barr != null)
+		{
+			if (arguments[0] == null)
+			{
+				player.message("Wrong Usage! Correct Usage: /removewhitelistdoor <player>");
+				return;
+			}
+			target = toPlayer(arguments[0]);
+			if (target == null)
+			{
+				player.message("No player found!");
+				return;
+			}
+			if (barr.itemType != "DOOR" or barr.itemType != "GATE")
+			{
+				player.message("You must be looking at a door or gate to use this command.");
+				return;
+			}
+			door = barr;
+			if (door.owner == player.id)
+			{
+				targetPlayerId = target.id;
+				doorId = door.instanceId;
+				whitelist = whitelistData.get(doorId);
+				if (whitelist != null and whitelist.contains(targetPlayerId))
+				{
+					whitelist.remove(targetPlayerId);
+					whitelistData.set(doorId, whitelist);
+					player.message("Player " + target.name + " has been removed from the whitelist for this door.");
+				}
+				else
+				{
+					player.message("Player " + target.name + " is not whitelisted for this door.");
+				}
+			}
+			else
+			{
+				player.message("You do not own this door.");
+			}
+		}
+		else
+		{
+			player.message("You must be looking at a door or gate to use this command.");
+		}
+	}
+}
