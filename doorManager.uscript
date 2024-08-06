@@ -23,7 +23,10 @@
 doorCloseTime = 5; // Time in seconds after which doors automatically close
 
 doorData = map();
-whitelistData = map();
+
+event onLoad(){
+	serverpackageinstall();
+}
 
 event onPlayerGestured(player, gesture) 
 {
@@ -32,7 +35,7 @@ event onPlayerGestured(player, gesture)
 		barr = player.look.getBarricade();
 		if (barr != null)
 		{
-			if (barr.itemType != "DOOR" or barr.itemType != "GATE") 
+			if (barr.itemType != "DOOR" and barr.itemType != "GATE") 
 			{
 				return;
 			}
@@ -41,10 +44,6 @@ event onPlayerGestured(player, gesture)
 			{
 				doorOpen(door.instanceId);
 			}
-			else
-			{
-				return;
-			}
 		}
 	}
 	if (gesture == "PUNCH_LEFT")
@@ -52,7 +51,7 @@ event onPlayerGestured(player, gesture)
 		barr = player.look.getBarricade();
 		if (barr != null)
 		{
-			if (barr.itemType != "DOOR" or barr.itemType != "GATE") 
+			if (barr.itemType != "DOOR" and barr.itemType != "GATE") 
 			{
 				if (barr.owner == player.id or isPlayerWhitelisted(barr.instanceId, player.id) == true)
 				{
@@ -89,7 +88,7 @@ event onInterval(1)
 	foreach (doorId in doorData.keys)
 	{
 		lastOpenTime = doorData.get(doorId);
-		totalTime = currentTime - lastOpenTime
+		totalTime = currentTime - lastOpenTime;
 		if (totalTime >= doorCloseTime)
 		{
 			doorsToClose.add(doorId);
@@ -104,34 +103,34 @@ event onInterval(1)
 
 function isPlayerWhitelisted(doorId, playerId) 
 {
-	whitelist = whitelistData.get(doorId);
-	if (whitelist != null and whitelist.contains(playerId))
-    {
+	whitelist = database.firstRow("SELECT * FROM doorWhitelist WHERE doorId=@p0 AND playerId=@p1", doorId, playerId);
+	if (whitelist.count != 0)
+	{
 		return true;
 	}
 	return false;
 }
 
 command whitelistdoor(target)
-{ 
+{
 	permission = "doorManager.whitelist";
-	execute() 
+	execute()
 	{
 		barr = player.look.getBarricade();
 		if (barr != null)
 		{
 			if (arguments[0] == null)
 			{
-			player.message("Wrong Usage! Correct Usage: /whitelistdoor <player>");
-			return;
+				player.message("Wrong Usage! Correct Usage: /whitelistdoor <player>");
+				return;
 			}
-			target = toPlayer(target);
+			target = toPlayer(arguments[0]);
 			if (target == null)
 			{
 				player.message("No player found!");
 				return;
 			}
-			if (barr.itemType != "DOOR" or barr.itemType != "GATE") 
+			if (barr.itemType != "DOOR" and barr.itemType != "GATE") 
             {
 				player.message("You must be looking at a door or gate to use this command.");
 				return;
@@ -141,15 +140,9 @@ command whitelistdoor(target)
 			{
 				targetPlayerId = target.id;
 				doorId = door.instanceId;
-				if (whitelistData.get(doorId) == null)
+				if (!isPlayerWhitelisted(doorId, targetPlayerId))
 				{
-					whitelistData.set(doorId, []);
-				}
-				whitelist = whitelistData.get(doorId);
-				if (!whitelist.contains(targetPlayerId))
-				{
-					whitelist.add(targetPlayerId);
-					whitelistData.set(doorId, whitelist);
+					database.nonQuery("INSERT INTO doorWhitelist (doorId, playerId) VALUES (@p0, @p1);", doorId, targetPlayerId);
 					player.message("Player " + target.name + " has been whitelisted for this door.");
 				}
 				else
@@ -188,7 +181,7 @@ command removewhitelistdoor(target)
 				player.message("No player found!");
 				return;
 			}
-			if (barr.itemType != "DOOR" or barr.itemType != "GATE")
+			if (barr.itemType != "DOOR" and barr.itemType != "GATE")
 			{
 				player.message("You must be looking at a door or gate to use this command.");
 				return;
@@ -197,12 +190,9 @@ command removewhitelistdoor(target)
 			if (door.owner == player.id)
 			{
 				targetPlayerId = target.id;
-				doorId = door.instanceId;
-				whitelist = whitelistData.get(doorId);
-				if (whitelist != null and whitelist.contains(targetPlayerId))
+				if (isPlayerWhitelisted(door.instanceId, targetPlayerId))
 				{
-					whitelist.remove(targetPlayerId);
-					whitelistData.set(doorId, whitelist);
+					database.nonQuery("DELETE FROM doorWhitelist WHERE doorId=@p0 AND playerId=@p1;", door.instanceId, targetPlayerId);
 					player.message("Player " + target.name + " has been removed from the whitelist for this door.");
 				}
 				else
@@ -219,5 +209,17 @@ command removewhitelistdoor(target)
 		{
 			player.message("You must be looking at a door or gate to use this command.");
 		}
+	}
+}
+
+function serverpackageinstall(){
+	databaseinstall();
+	logger.log("Door Manager by Tanese Successfully Loaded!");
+}
+
+function databaseinstall(){
+	if (database.allRows("SELECT count(*) as Exist from INFORMATION_SCHEMA.TABLES where table_name = 'doorWhitelist';")[0][0] == "0")
+	{
+		database.nonQuery("CREATE TABLE IF NOT EXISTS doorWhitelist(doorId VARCHAR(255), playerId VARCHAR(255));");
 	}
 }
