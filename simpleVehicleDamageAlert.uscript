@@ -2,7 +2,7 @@
     Simple Vehicle Damage Alerts by Tanese
     ======================================
     This script sends alerts to a Discord webhook when a vehicle is damaged or destroyed in the game. 
-    It includes configuration options to enable or disable the alerts and to include damage logs.
+    It includes configuration options to enable or disable the alerts.
 */
 
 /* 
