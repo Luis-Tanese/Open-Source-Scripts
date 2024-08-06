@@ -1,0 +1,67 @@
+/*
+    Vehicle Despawner by Tanese
+    ===========================
+    This script automatically despawns vehicles that have not been driven for a specified amount of time. 
+    It periodically checks the time since the last drive for each vehicle and despawns those that exceed the specified despawnTime.
+*/
+
+despawnTime = 3600; // Default despawn time in seconds (e.g., 1 hour)
+
+/*
+    ====
+    Code
+    ====
+*/
+
+vehicleData = map();
+
+event onVehicleEnter(player, vehicle, cancel) 
+{
+    vehicleId = vehicle.id;
+    currentTime = time.now.totalSeconds;
+    vehicleData.set(vehicleId, currentTime);
+}
+
+event onVehicleExit(player, vehicle, cancel) 
+{
+    vehicleId = vehicle.id;
+    currentTime = time.now.totalSeconds;
+    vehicleData.set(vehicleId, currentTime);
+}
+
+event onInterval(300) 
+{
+    currentTime = time.now.totalSeconds;
+    vehiclesToDespawn = [];
+
+    foreach (vehicleId in vehicleData.keys)
+    {
+        lastDrivenTime = vehicleData.get(vehicleId);
+        timeTotal = currentTime - lastDrivenTime;
+        if (timeTotal > despawnTime)
+        {
+            vehiclesToDespawn.add(vehicleId);
+        }
+    }
+
+    foreach (vehicleId in vehiclesToDespawn)
+    {
+        vehicle = server.findVehicle(vehicleId);
+        if (vehicle != null)
+        {
+            if (vehicle.passengers.length == 0 or vehicle.passengers.count == 0)
+            {
+                vehicle.destroy();
+                vehicleData.remove(vehicleId);
+            }
+            else
+            {
+                vehicleData.set(vehicleId, currentTime);
+            }
+        }
+        else
+        {
+            vehicleData.remove(vehicleId);
+        }
+    }
+}
