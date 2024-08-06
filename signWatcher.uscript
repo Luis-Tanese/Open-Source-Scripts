@@ -1,0 +1,33 @@
+/* 
+    Sign Watcher by Tanese
+    ======================
+    Pretty simple script that checks for signs modified and sends a webhook containing the information.
+*/
+
+/*  
+    ==============
+    Configuration:
+    ==============
+*/
+
+// Webhook configs
+webhookURL = "Your webhook link here"; // This sets your webhook link; Make sure it is inside the ""
+webhookImage = "https://i.imgur.com/SFdYgXJ.png"; // This sets the image of your webhook
+webhookColor = 16711680; // This sets the color of your webhook
+
+/* 
+    =====
+    Code:
+    =====
+*/
+
+event onSignModify(player, sign, text){
+    embed = discordEmbed();
+    embed.author.name = "Sign Watcher";
+    embed.title = "Sign Modified";
+    embed.description = "{0} has modified a sign.\nText modified: `{1}`\nSign instance id: `{2}`".format(player.name, text, sign.instanceId);
+    embed.author.iconUrl = webhookImage;
+    embed.color = webhookColor;
+    embed.footer.text = time.now.date + " | " + time.now.time;
+    discord.sendEmbed(webhookURL, embed);
+}
