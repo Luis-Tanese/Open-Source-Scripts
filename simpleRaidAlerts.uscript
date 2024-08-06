@@ -3,6 +3,11 @@
     ============================
     This script sends alerts to a Discord webhook when a barricade is damaged in the game. 
     It includes configuration options to enable or disable the alerts and to include damage logs.
+
+    ========================================
+    Modules Needed (Download from releases):
+    ========================================
+    - uScriptExtended by MolyiEZ: https://github.com/MolyiEZ/uScriptExtended
 */
 
 /* 
