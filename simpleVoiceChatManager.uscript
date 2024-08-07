@@ -1,0 +1,69 @@
+/* 
+    Simple Voice Chat Manager by Tanese
+    ===================================
+    This script allows players to manage their voice chat range in the game.
+    Players can switch between different voice chat ranges: whisper, speak, shout, and announce.
+
+    ========================================
+    Modules Needed (Download from releases):
+    ========================================
+    - ProximityVoice.uScriptModule by Dudewithoutname: https://github.com/Dudewithoutname/ProximityVoice.uScriptModule
+
+    ======================
+    Commands:
+    ======================
+    - /whisper: Set the voice chat range to whisper.
+      Permission: voiceManager.whisper
+    
+    - /speak: Set the voice chat range to normal speaking.
+      Permission: voiceManager.speak
+    
+    - /shout: Set the voice chat range to shout.
+      Permission: voiceManager.shout
+    
+    - /announcevoice: Set the voice chat range to announce. (Should only be used by admins)
+      Permission: voiceManager.announce
+*/
+range = {
+    "whisper" : 30,
+    "speak" : 50,
+    "shout" : 100,
+    "announce": 10000
+};
+
+event onLoad(){
+    proximityVoice.defaultRange = range["speak"];
+    logger.log("Simple Voice Chat Manager by Tanese successfully loaded!");
+}
+
+command whisper(){
+    permission = "voiceManager.whisper";
+    execute(){
+        proximityVoice.changeVoiceDistance(player.id, range["whisper"]);
+        player.message("You are now whispering!");
+    }
+}
+
+command speak(){
+    permission = "voiceManager.speak";
+    execute(){
+        proximityVoice.changeVoiceDistance(player.id, range["speak"]);
+        player.message("You are now speaking normally!");
+    }
+}
+
+command shout(){
+    permission = "voiceManager.shout";
+    execute(){
+        proximityVoice.changeVoiceDistance(player.id, range["shout"]);
+        player.message("You are now shouting!");
+    }
+}
+
+command announcevoice(){
+    permission = "voiceManager.announce";
+    execute(){
+        proximityVoice.changeVoiceDistance(player.id, range["announce"]);
+        player.message("You are now announcing!");
+    }
+}
