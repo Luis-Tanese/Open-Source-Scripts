@@ -1,0 +1,51 @@
+/*
+    Simple Discord Report System by Tanese
+    ======================================
+    This script allows players to report other players with a message.
+    The reports are sent to a specified Discord webhook.
+    
+    ======================
+    Commands:
+    ======================
+    - /report <target> <message>: Report a player with a message.
+      Permission: reportManager.report
+*/
+
+webhookURL = "Your webhook link here"; // This sets your webhook link; Make sure it is inside the ""
+webhookImage = "https://i.imgur.com/SFdYgXJ.png"; // This sets the image of your webhook
+webhookColor = 15158332; // This sets the color of the webhook embed
+
+event onLoad(){
+    logger.log("Simple Discord Report System by Tanese successfully loaded!");
+}
+
+command report(){
+    permission = "reportManager.report";
+    execute(){
+        if (arguments.count < 2)
+        {
+            player.message("Wrong Usage! Correct Usage: /report <player> <message>");
+            return;
+        }
+        targetPlayer = toPlayer(arguments[0]);
+        if (targetPlayer == null)
+        {
+            player.message("No player found!");
+            return;
+        }
+        message = arguments.skip(1).join(" ");
+        sendReportToDiscord(player, targetPlayer, message);
+        player.message("Your report has been submitted!");
+    }
+}
+
+function sendReportToDiscord(reporter, target, message) {
+    embed = discordEmbed();
+    embed.author.name = "🚨 **Player Report** 🚨";
+    embed.title = "New Report Submitted!";
+    embed.description = "**Reporter:** {0}\n**Reported Player:** {1}\n**Message:** {2}".format(reporter.name, target.name, message);
+    embed.author.iconUrl = webhookImage;
+    embed.color = webhookColor;
+    embed.footer.text = time.now.date + " | " + time.now.time;
+    discord.sendEmbed(webhookURL, embed);
+}
