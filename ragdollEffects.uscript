@@ -1,0 +1,72 @@
+/*
+	Ragdoll Effects by Tanese
+	=========================
+	Players can set their preferred ragdoll effect, which will be applied to animals, players, and zombies they kill.
+
+	========================================
+    Modules Needed (Download from releases):
+    ========================================
+    - uScriptExtended by MolyiEZ: https://github.com/MolyiEZ/uScriptExtended
+
+	======================
+    Commands:
+    ======================
+	- /setragdoll <type>: Valid types are: None, Bronze, Silver, Gold and Zero
+	  Permission: ragdollManager.set
+*/
+
+validRagdolls = ["NONE", "BRONZE", "SILVER", "GOLD", "ZERO"];
+
+command setragdoll(ragdollType)
+{
+	permission = "ragdollManager.set";
+	execute(){
+		if (arguments.count < 1)
+		{
+			player.message("Wrong Usage! Correct usage: /setragdoll <type>. Valid types are: " + validRagdolls.join(", "), "red");
+			return;
+		}
+		ragdollType = ragdollType.toUpper();
+		if (!validRagdolls.contains(ragdollType))
+		{
+			player.message("Invalid ragdoll type. Valid types are: " + validRagdolls.join(", "), "red");
+			return;
+		}
+		player.setData("preferredRagdoll", ragdollType);
+		player.message("Ragdoll effect set to " + ragdollType + ".", "green");
+	}
+}
+
+function getRagdollEffect(player)
+{
+	ragdollEffect = player.getData("preferredRagdoll");
+	if (ragdollEffect == null)
+	{
+		ragdollEffect = "NONE";
+	}
+	return ragdollEffect;
+}
+
+event onAnimalDamaged(animal, killer, cancel, damage, limb, ragdoll) {
+	if (killer != null)
+	{
+		ragdollEffect = getRagdollEffect(killer);
+		ragdoll = ragdollEffect;
+	}
+}
+
+event onPlayerDamagedCustom(player, killer, cancel, damage, cause, limb, ragdoll) {
+	if (killer != null)
+	{
+		ragdollEffect = getRagdollEffect(killer);
+		ragdoll = ragdollEffect;
+	}
+}
+
+event onZombieDamaged(zombie, killer, cancel, damage, limb, ragdoll) {
+	if (killer != null)
+	{
+		ragdollEffect = getRagdollEffect(killer);
+		ragdoll = ragdollEffect;
+	}
+}
