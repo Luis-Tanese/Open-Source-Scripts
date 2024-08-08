@@ -1,0 +1,45 @@
+/*
+    Respawn Protection by Tanese
+    ============================
+    Provides temporary invulnerability to players upon respawn.
+*/
+
+
+protectionTime = 10; // Duration of respawn protection in seconds
+
+protectedPlayers = map();
+
+event onPlayerRespawned(player) {
+    player.setData("isProtected", true);
+    protectedPlayers.set(player.id, time.now.totalSeconds);
+    player.message("You have respawn protection for " + protectionTime + " seconds.", "green");
+}
+
+event onInterval(1) {
+    currentTime = time.now.totalSeconds;
+    foreach (playerId in protectedPlayers.keys)
+    {
+        respawnTime = protectedPlayers.get(playerId);
+        if (currentTime - respawnTime > protectionTime)
+        {
+            player = server.findPlayer(playerId);
+            if (player != null)
+            {
+                player.setData("isProtected", false);
+                player.message("Your respawn protection has ended.", "red");
+            }
+            protectedPlayers.remove(playerId);
+        }
+    }
+}
+
+event onPlayerDamaged(player, killer, cancel, damage, cause, limb) {
+    if (player.getData("isProtected"))
+    {
+        cancel = true;
+        womp = time.now.totalSeconds - protectedPlayers.get(player.id);
+        womp1 = protectionTime - womp;
+        player.message("You are protected from damage for " + womp1 + " more seconds.", "yellow");
+        killer.message("That player has respawn protection!", "yellow");
+    }
+}
