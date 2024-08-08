@@ -40,6 +40,9 @@ event onPlayerDamaged(player, killer, cancel, damage, cause, limb) {
         womp = time.now.totalSeconds - protectedPlayers.get(player.id);
         womp1 = protectionTime - womp;
         player.message("You are protected from damage for " + womp1 + " more seconds.", "yellow");
-        killer.message("That player has respawn protection!", "yellow");
+        if (killer != null) 
+        {
+            killer.message("That player has respawn protection!", "yellow");
+        }
     }
 }
