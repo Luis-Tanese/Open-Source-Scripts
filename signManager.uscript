@@ -1,0 +1,141 @@
+/*
+    Sign Manager by Tanese
+    ======================
+    This script allows players to register signs in the game. The status of the player (online/offline) is displayed on the sign, 
+    and the time they were last seen is also recorded.
+
+    =====================
+    Commands:
+    =====================
+    - /registersign: Registers the sign the player is looking at and updates it with their online status.
+      Permission: signManager.register
+
+    - /removesign: (Admin) Removes the player's registration from the sign they are looking at.
+      Permission: signManager.admin
+*/
+
+/*
+    =====================
+    Configuration:
+    ===================== 
+*/
+
+hasToBeOwner = false; // Set to true if the player must be the owner of the sign to register it
+
+event onLoad() 
+{
+    packageInstall();
+}
+
+function packageInstall() {
+    databaseInstall();
+    logger.log("Sign Manager by Tanese Successfully Loaded!");
+}
+
+function databaseInstall() {
+    if (database.allRows("SELECT count(*) as Exist from INFORMATION_SCHEMA.TABLES where table_name = 'signManager';")[0][0] == "0")
+    {
+        database.nonQuery("CREATE TABLE IF NOT EXISTS signManager(playerId VARCHAR(17), playerName VARCHAR(255), signInstanceId INT PRIMARY KEY, lastSeen TEXT);");
+    }
+}
+
+event onPlayerJoined(player) 
+{
+    signRecord = database.firstRow("SELECT signInstanceId, playerName FROM signManager WHERE playerId=@p0", player.id);
+    if (signRecord != null and signRecord.length > 0) {
+        signInstanceId = signRecord[0].toNumber();
+        playerName = signRecord[1];
+        sign = server.findBarricade(signInstanceId);
+        if (sign != null)
+        {
+            sign.sign.text = "<B><color=#0073e6>Owner:</color> <color=#29a329>" + playerName + " (" + player.id + ")</color>\n" +
+                "<color=#0073e6>Status:</color> <color=#29a329>Online</color>\n" +
+                "<color=#0073e6>Last Seen:</color> " + time.now.date + " " + time.now.time + "</B>";
+            database.nonQuery("UPDATE signManager SET lastSeen=@p1 WHERE playerId=@p0", player.id, "Online");
+        }
+    }
+}
+
+event onPlayerQuit(player) 
+{
+    signRecord = database.firstRow("SELECT signInstanceId, playerName FROM signManager WHERE playerId=@p0", player.id);
+    if (signRecord != null and signRecord.length > 0) {
+        signInstanceId = signRecord[0].toNumber();
+        playerName = signRecord[1];
+        sign = server.findBarricade(signInstanceId);
+        if (sign != null)
+        {
+            sign.sign.text = "<B><color=#0073e6>Owner:</color> <color=#29a329>" + playerName + " (" + player.id + ")</color>\n" +
+                "<color=#0073e6>Status:</color> <color=#e60000>Offline</color>\n" +
+                "<color=#0073e6>Last Seen:</color> " + time.now.date + " " + time.now.time + "</B>";
+            database.nonQuery("UPDATE signManager SET lastSeen=@p1 WHERE playerId=@p0", player.id, time.now.date + " " + time.now.time);
+
+            logger.log("[Sign Manager] Sign updated for player: " + player.id);
+        }
+    }
+}
+
+command registersign() {
+    permission = "signManager.register";
+    execute() {
+        barricade = player.look.getBarricade();
+        if (barricade == null)
+        {
+            player.message("[Sign Manager] No sign found!", "red");
+            return;
+        }
+        if (barricade.itemType != "SIGN")
+        {
+            player.message("[Sign Manager] The object you are looking at is not a sign!", "red");
+            return;
+        }
+        existingSign = database.firstRow("SELECT signInstanceId FROM signManager WHERE playerId=@p0", player.id);
+        if (existingSign.length > 0)
+        {
+            player.message("[Sign Manager] You already have a sign saved. Use /removeSign to remove it first.", "red");
+            return;
+        }
+        signInstanceId = barricade.instanceId;
+        if (hasToBeOwner)
+        {
+            if (barricade.owner != player.id)
+            {
+                player.message("[Sign Manager] You do not own this sign!", "red");
+                return;
+            }
+        }
+        if (!hasToBeOwner) {
+            signCheck = database.firstRow("SELECT playerId FROM signManager WHERE signInstanceId=@p0", signInstanceId);
+            if (signCheck != null and signCheck.length > 0 and signCheck[0] != player.id) {
+                player.message("[Sign Manager] This sign is owned by someone else!", "red");
+                return;
+            }
+        }
+        barricade.sign.text = "<B><color=#0073e6>Owner:</color> <color=#29a329>" + player.name + " (" + player.id + ")</color>\n" +
+            "<color=#0073e6>Status:</color> <color=#29a329>Online</color>\n" +
+            "<color=#0073e6>Registered at:</color> " + time.now.date + " " + time.now.time + "</B>";
+        database.nonQuery("REPLACE INTO signManager (playerId, playerName, signInstanceId, lastSeen) VALUES (@p0, @p1, @p2, @p3);", player.id, player.name, signInstanceId, "Online");
+        player.message("[Sign Manager] Sign saved successfully!", "green");
+    }
+}
+
+command removesign() {
+    permission = "signManager.remove";
+    execute() {
+        barricade = player.look.getBarricade();
+        if (barricade == null)
+        {
+            player.message("[Sign Manager] No sign found!", "red");
+            return;
+        }
+        if (barricade.itemType != "SIGN")
+        {
+            player.message("[Sign Manager] The object you are looking at is not a sign!", "red");
+            return;
+        }
+        signInstanceId = barricade.instanceId;
+        barricade.sign.text = "<color=#feff00>Vacant</color>";
+        database.nonQuery("DELETE FROM signManager WHERE playerId=@p0 AND signInstanceId=@p1;", player.id, signInstanceId);
+        player.message("[Sign Manager] Sign removed successfully!", "green");
+    }
+}
