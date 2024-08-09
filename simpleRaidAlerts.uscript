@@ -21,7 +21,7 @@ enabled = true; // This is set if you want raid alerts or not; Set 'false' if yo
 damageLogs = true; // This is set if you want damage logs a.k.a when a structure gets damaged 
 
 // Webhook configs
-webhookURL = "Your webhook link here"; // This sets your webhook link; Make sure it is inside the ""
+webhookURL = "https://discord.com/api/webhooks/1271443813579100241/WMUHyd3aoOWlX53Np8JrQsyfMiRbIyG_uOeC01Y2gHh1bdMYzmD5l72hm2sJU1p17e24"; // This sets your webhook link; Make sure it is inside the ""
 webhookImage = "https://i.imgur.com/SFdYgXJ.png"; // This sets the image of your webhook
 webhookColor = 15158332; // This sets the color of the webhook embed
 
@@ -41,8 +41,8 @@ event onBarricadeDamaged(player, barricade, damage, cause){
         if (damageLogs)
         {
             embed = discordEmbed();
-            embed.author.name = "🚨 **Raid Alert!** 🚨";
-            embed.title = "Barricade Damaged!";
+            embed.author.name = "🚨 Raid Alert 🚨";
+            embed.title = "**Barricade Damaged!**";
             embed.description = "**Raider:** {0}\n**Damage:** `{1}`\n**Cause:** {2}\n**Location:** `{3}`\n**Barricade Id:** `{4}`\n**Owner's Id:** `{5}`".format(player.name, damage, cause, barricade.position.toString(), barricade.instanceId, barricade.owner);
             embed.author.iconUrl = webhookImage;
             embed.color = webhookColor;
@@ -56,8 +56,8 @@ event onBarricadeDestroy(player, barricade){
     if (enabled)
     {
         embed = discordEmbed();
-        embed.author.name = "🚨 **Raid Alert!** 🚨";
-        embed.title = "Barricade Destroyed!";
+        embed.author.name = "🚨 Raid Alert 🚨";
+        embed.title = "**Barricade Destroyed!**";
         embed.description = "**Raider:** {0}\n**Cause:** {2}\n**Location:** `{3}`\n**Barricade Id:** `{4}`\n**Owner's Id:** `{5}`".format(player.name, "", cause, barricade.position.toString(), barricade.instanceId, barricade.owner);
         embed.author.iconUrl = webhookImage;
         embed.color = webhookColor;
@@ -72,8 +72,8 @@ event onStructureDamaged(player, structure, damage, cause){
         if (damageLogs)
         {
             embed = discordEmbed();
-            embed.author.name = "🚨 **Raid Alert!** 🚨";
-            embed.title = "Structure Damaged!";
+            embed.author.name = "🚨 Raid Alert 🚨";
+            embed.title = "**Structure Damaged!**";
             embed.description = "**Raider:** {0}\n**Damage:** `{1}`\n**Cause:** {2}\n**Location:** `{3}`\n**Structure Id:** `{4}`\n**Owner's Id:** `{5}`".format(player.name, damage, cause, structure.position.toString(), structure.instanceId, structure.owner);
             embed.author.iconUrl = webhookImage;
             embed.color = webhookColor;
@@ -87,8 +87,8 @@ event onStructureDestroy(player, structure){
     if (enabled)
     {
         embed = discordEmbed();
-        embed.author.name = "🚨 **Raid Alert!** 🚨";
-        embed.title = "Structure Destroyed!";
+        embed.author.name = "🚨 Raid Alert 🚨";
+        embed.title = "**Structure Destroyed!**";
         embed.description = "**Raider:** {0}\n**Cause:** {2}\n**Location:** `{3}`\n**Structure Id:** `{4}`\n**Owner's Id:** `{5}`".format(player.name, "", cause, structure.position.toString(), structure.instanceId, structure.owner);
         embed.author.iconUrl = webhookImage;
         embed.color = webhookColor;
