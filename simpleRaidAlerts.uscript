@@ -21,7 +21,7 @@ enabled = true; // This is set if you want raid alerts or not; Set 'false' if yo
 damageLogs = true; // This is set if you want damage logs a.k.a when a structure gets damaged 
 
 // Webhook configs
-webhookURL = "https://discord.com/api/webhooks/1271443813579100241/WMUHyd3aoOWlX53Np8JrQsyfMiRbIyG_uOeC01Y2gHh1bdMYzmD5l72hm2sJU1p17e24"; // This sets your webhook link; Make sure it is inside the ""
+webhookURL = "YOUR WEBHOOK LINK HERE"; // This sets your webhook link; Make sure it is inside the ""
 webhookImage = "https://i.imgur.com/SFdYgXJ.png"; // This sets the image of your webhook
 webhookColor = 15158332; // This sets the color of the webhook embed
 
