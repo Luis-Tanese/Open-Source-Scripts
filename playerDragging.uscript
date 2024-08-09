@@ -2,17 +2,17 @@
     Player Dragging Script by Tanese
     =================================
     This script allows a player to drag another handcuffed player.
-
-    ========================================
+    
+	========================================
     Modules Needed (Download from releases):
     ========================================
     - uScriptExtended by MolyiEZ: https://github.com/MolyiEZ/uScriptExtended
-
-    =====================
+	
+	=====================
     Commands:
     =====================
     - /drag <on/off>: Use this to start or stop dragging
-	Permission: dragManager.drag
+	  Permission: dragManager.drag
 */
 
 event onLoad() 
@@ -24,9 +24,9 @@ command drag(state)
 {
 	permission = "dragManager.drag";
 	execute() 
-	{off") {
-			player.message("Wrong Usage! 
-		if (state != "on" and state != "Correct Usage: /drag <on/off>", "red");
+	{
+		if (state != "on" and state != "off") {
+			player.message("Wrong Usage! Correct Usage: /drag <on/off>", "red");
 			return;
 		}
 		if (state == "on")
