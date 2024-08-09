@@ -11,7 +11,7 @@
       Permission: reportManager.report
 */
 
-webhookURL = "Your webhook link here"; // This sets your webhook link; Make sure it is inside the ""
+webhookURL = "YOUR WEBHOOK LINK HERE"; // This sets your webhook link; Make sure it is inside the ""
 webhookImage = "https://i.imgur.com/SFdYgXJ.png"; // This sets the image of your webhook
 webhookColor = 15158332; // This sets the color of the webhook embed
 
@@ -41,9 +41,9 @@ command report(){
 
 function sendReportToDiscord(reporter, target, message) {
     embed = discordEmbed();
-    embed.author.name = "🚨 **Player Report** 🚨";
-    embed.title = "New Report Submitted!";
-    embed.description = "**Reporter:** {0}\n**Reported Player:** {1}\n**Message:** {2}".format(reporter.name, target.name, message);
+    embed.author.name = "🚨 Player Report 🚨";
+    embed.title = "**New Report Submitted!**";
+    embed.description = "**Reporter:** {0}\n**Reported Player:** {1}\n**Message:** {2}\n**Reporter's ID:** `{3}`\n**Reported Player's ID:** `{4}`".format(reporter.name, target.name, message, reporter.id, target.id);
     embed.author.iconUrl = webhookImage;
     embed.color = webhookColor;
     embed.footer.text = time.now.date + " | " + time.now.time;
