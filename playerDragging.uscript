@@ -1,0 +1,108 @@
+/*
+    Player Dragging Script by Tanese
+    =================================
+    This script allows a player to drag another handcuffed player.
+
+	========================================
+    Modules Needed (Download from releases):
+    ========================================
+    - uScriptExtended by MolyiEZ: https://github.com/MolyiEZ/uScriptExtended
+    
+	=====================
+    Commands:
+    =====================
+    - /drag <on/off>: Use this to start or stop dragging
+	  Permission: dragManager.drag
+*/
+
+event onLoad() 
+{
+    logger.log("Player Dragging Script by Tanese Successfully Loaded!");
+}
+
+command drag(state) 
+{
+	permission = "dragManager.drag";
+	execute() 
+	{off") {
+			player.message("Wrong Usage! 
+		if (state != "on" and state != "Correct Usage: /drag <on/off>", "red");
+			return;
+		}
+		if (state == "on")
+		{
+			player.setData("drag", true);
+			player.message("Dragging is now enabled!", "green");
+		}
+		else
+		{
+			player.setData("drag", false);
+			player.setData("draggedPlayerId", null);
+			player.message("Dragging is now disabled!", "green");
+		}
+	}
+}
+
+event onPlayerGestured(player, gesture) 
+{
+	if(player.getData("drag") and gesture == "SURRENDER_START")
+	{
+		targetPlayer = player.look.getPlayer();
+		if (targetPlayer != null)
+		{
+			if (targetPlayer.arrested)
+			{
+				player.setData("draggedPlayerId", targetPlayer.id);
+				player.message("You are now dragging " + targetPlayer.name + "!", "green");
+				targetPlayer.message("You are being dragged by " + player.name + "!", "yellow");
+			}
+			else
+			{
+				player.message("The target player must be handcuffed to start dragging!", "red");
+			}
+		}
+		else
+		{
+			player.message("No target player found!", "red");
+		}
+	}
+}
+
+event onPlayerPositionUpdated(player) 
+{
+	if (player.getData("drag"))
+	{
+		draggedPlayerId = player.getData("draggedPlayerId");
+		if (draggedPlayerId != null)
+		{
+			draggedPlayer = toPlayer(draggedPlayerId);
+			if (draggedPlayer != null)
+			{
+				newPosition = player.position;
+				newPosition.y += 0.1;
+				draggedPlayer.teleport(newPosition);
+			}
+			else
+			{
+				player.message("The dragged player is no longer available!", "red");
+				player.setData("draggedPlayerId", null);
+			}
+		}
+	}
+}
+
+event onPlayerQuit(player) 
+{
+	if (player.getData("drag"))
+	{
+		draggedPlayerId = player.getData("draggedPlayerId");
+		if (draggedPlayerId != null)
+		{
+			draggedPlayer = toPlayer(draggedPlayerId);
+			if (draggedPlayer != null)
+			{
+				draggedPlayer.message("You have been released as the dragging player has left!", "yellow");
+			}
+		}
+	}
+}
