@@ -3,12 +3,12 @@
     =================================
     This script allows a player to drag another handcuffed player.
     
-	========================================
+    ========================================
     Modules Needed (Download from releases):
     ========================================
     - uScriptExtended by MolyiEZ: https://github.com/MolyiEZ/uScriptExtended
 	
-	=====================
+    =====================
     Commands:
     =====================
     - /drag <on/off>: Use this to start or stop dragging
