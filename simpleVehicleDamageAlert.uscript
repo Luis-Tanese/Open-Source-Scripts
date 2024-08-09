@@ -2,7 +2,7 @@
     Simple Vehicle Damage Alerts by Tanese
     ======================================
     This script sends alerts to a Discord webhook when a vehicle is damaged or destroyed in the game. 
-    It includes configuration options to enable or disable the alerts.
+    It includes configuration options to enable or disable the alerts and to include damage logs.
 */
 
 /* 
@@ -15,7 +15,7 @@
 enabled = true; // This is set if you want vehicle damage alerts or not; Set 'false' if you don't want it
 
 // Webhook configs
-webhookURL = "Your webhook link here"; // This sets your webhook link; Make sure it is inside the ""
+webhookURL = "YOUR WEBHOOK LINK HERE"; // This sets your webhook link; Make sure it is inside the ""
 webhookImage = "https://i.imgur.com/SFdYgXJ.png"; // This sets the image of your webhook
 webhookColor = 16711680; // This sets the color of your webhook
 
@@ -29,16 +29,27 @@ event onLoad(){
     logger.log("Vehicle Damage Alerts by Tanese successfully loaded!");
 }
 
-event onVehicleDamaged(player, vehicle, damage, cause){
+event onVehicleDamaged(vehicle, player, cause, damage){
     if (enabled)
     {
-        embed = discordEmbed();
-        embed.author.name = "🚨 **Vehicle Damage Alert!** 🚨";
-        embed.title = "Vehicle Damaged!";
-        embed.description = "**Attacker:** {0}\n**Damage:** `{1}`\n**Cause:** {2}\n**Location:** `{3}`\n**Vehicle Id:** `{4}`\n**Owner's Id:** `{5}`".format(player.name, damage, cause, vehicle.position.toString(), vehicle.instanceId, vehicle.owner);
-        embed.author.iconUrl = webhookImage;
-        embed.color = webhookColor;
-        embed.footer.text = time.now.date + " | " + time.now.time;
-        discord.sendEmbed(webhookURL, embed);
+        if (player != null)
+        {
+            if (damage > 0)
+            {
+                vehicleOwner = vehicle.owner;
+                if (vehicle.owner == null)
+                {
+                    vehicleOwner = "None";
+                }
+                embed = discordEmbed();
+                embed.author.name = "🚨 Vehicle Damage Alert! 🚨";
+                embed.title = "**Vehicle Damaged!**";
+                embed.description = "**Attacker:** {0}\n**Damage:** `{1}`\n**Cause:** {2}\n**Location:** `{3}`\n**Vehicle Id:** `{4}`\n**Owner's Id:** `{5}`".format(player.name, damage, cause, vehicle.position.toString(), vehicle.instanceId, vehicleOwner);
+                embed.author.iconUrl = webhookImage;
+                embed.color = webhookColor;
+                embed.footer.text = time.now.date + " | " + time.now.time;
+                discord.sendEmbed(webhookURL, embed);
+            }
+        }
     }
 }
