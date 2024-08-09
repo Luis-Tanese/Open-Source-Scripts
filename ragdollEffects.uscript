@@ -4,13 +4,13 @@
 	Players can set their preferred ragdoll effect, which will be applied to animals, players, and zombies they kill.
 
 	========================================
-    Modules Needed (Download from releases):
-    ========================================
-    - uScriptExtended by MolyiEZ: https://github.com/MolyiEZ/uScriptExtended
+    	Modules Needed (Download from releases):
+    	========================================
+    	- uScriptExtended by MolyiEZ: https://github.com/MolyiEZ/uScriptExtended
 
 	======================
-    Commands:
-    ======================
+    	Commands:
+    	======================
 	- /setragdoll <type>: Valid types are: None, Bronze, Silver, Gold and Zero
 	  Permission: ragdollManager.set
 */
