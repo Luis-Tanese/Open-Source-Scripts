@@ -11,11 +11,11 @@
 	======================
     	Commands:
     	======================
-	- /setragdoll <type>: Valid types are: None, Bronze, Silver, Gold and Zero
+	- /setragdoll <type>: Valid types are: None, Bronze, Silver or Gold
 	  Permission: ragdollManager.set
 */
 
-validRagdolls = ["NONE", "BRONZE", "SILVER", "GOLD", "ZERO"];
+validRagdolls = ["NONE", "BRONZE", "SILVER", "GOLD"];
 
 command setragdoll(ragdollType)
 {
