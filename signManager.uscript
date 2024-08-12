@@ -149,7 +149,7 @@ event onBarricadeSalvaged(player, barricade, cancel){
     if (barricade.itemType == "SIGN")
     {
         signRecord = database.firstRow("SELECT signInstanceId FROM signManager WHERE signInstanceId=@p0;", barricade.instanceId);
-        if (signRecord.length == 0)
+        if (signRecord.length != 0)
         {
             player.message("[Sign Manager] This sign is registered and cannot be salvaged!", "red");
             cancel = true;
