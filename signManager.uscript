@@ -4,6 +4,11 @@
     This script allows players to register signs in the game. The status of the player (online/offline) is displayed on the sign, 
     and the time they were last seen is also recorded.
 
+    =======================================
+    Modules Needed (Download from releases)
+    =======================================
+    - uScriptExtended by MolyiEZ: https://github.com/MolyiEZ/uScriptExtended
+
     =====================
     Commands:
     =====================
@@ -137,5 +142,17 @@ command removesign() {
         barricade.sign.text = "<color=#feff00>Vacant</color>";
         database.nonQuery("DELETE FROM signManager WHERE playerId=@p0 AND signInstanceId=@p1;", player.id, signInstanceId);
         player.message("[Sign Manager] Sign removed successfully!", "green");
+    }
+}
+
+event onBarricadeSalvaged(player, barricade, cancel){
+    if (barricade.itemType == "sign")
+    {
+        signRecord = database.firstRow("SELECT signInstanceId FROM signManager WHERE signInstanceId=@p0;", barricade.instanceId);
+        if (signRecord.length == 0)
+        {
+            player.message("[Sign Manager] This sign is registered and cannot be salvaged!", "red");
+            cancel = true;
+        }
     }
 }
