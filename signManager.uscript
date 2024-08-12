@@ -146,7 +146,7 @@ command removesign() {
 }
 
 event onBarricadeSalvaged(player, barricade, cancel){
-    if (barricade.itemType == "sign")
+    if (barricade.itemType == "SIGN")
     {
         signRecord = database.firstRow("SELECT signInstanceId FROM signManager WHERE signInstanceId=@p0;", barricade.instanceId);
         if (signRecord.length == 0)
