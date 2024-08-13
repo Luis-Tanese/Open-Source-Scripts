@@ -125,7 +125,7 @@ command registersign() {
 }
 
 command removesign() {
-    permission = "signManager.remove";
+    permission = "signManager.admin";
     execute() {
         barricade = player.look.getBarricade();
         if (barricade == null)
