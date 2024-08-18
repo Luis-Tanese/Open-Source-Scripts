@@ -80,3 +80,12 @@ command reply()
         }
     }
 }
+
+event onPlayerQuit(player){
+    foreach (key in lastSender.keys)
+    {
+        if (lastSender[key] == player.id or key == player.id){
+            lastSender.remove(key);
+        }
+    }
+}
