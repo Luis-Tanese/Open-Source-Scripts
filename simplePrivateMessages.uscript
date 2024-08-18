@@ -1,7 +1,7 @@
 /* 
     Simple Private Messages by Tanese
     =================================
-    Very simple and made quickly.
+    Very simple and useful.
 
     =======
     Command
@@ -9,6 +9,9 @@
     /pm <player> <message>
     Permission: pm
 */
+
+/* Configuration */
+logging = true; // Set to false if you don't want to log player's private messages
 
 command pm(){
     permission = "pm";
@@ -29,5 +32,8 @@ command pm(){
         message = arguments.skip(1).join(" ");
         target.message("{0} has sent you a private message! Message: {1}".format(player.name, message), "yellow");
         player.message("Message successfully sent to {0}".format(target.name), "green");
+        if(logging){
+            logger.log("{0} has sent a private message to {1}. Message: {2}".format(player.name, target.name, message));
+        }
     }
 }
