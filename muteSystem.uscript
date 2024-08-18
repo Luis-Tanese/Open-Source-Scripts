@@ -1,0 +1,120 @@
+/*
+    Mute System by Tanese
+    =====================
+    This script allows admins to mute players, preventing them from chatting.
+    
+    =========
+    Commands
+    =========
+    /mute <player> - Mutes the specified player.
+    Permission: muteSystem.mute
+
+    /unmute <player> - Unmutes the specified player.
+    Permission: muteSystem.unmute
+*/
+
+/* Configuration */
+muteFilePath = "Mutes.txt"; // Path to the file that stores muted players (go to Servers\{youserver}\uScript\Data and make a file there called Mutes.txt or whatever you want it to be)
+
+
+mutes = [];
+command mute()
+{
+    permission = "muteSystem.mute";
+    execute(){
+        if (arguments[0] == null)
+        {
+            player.message("Correct Usage: /mute <player>", "red");
+            return;
+        }
+        targetPlayer = toPlayer(arguments[0]);
+        if (targetPlayer == null)
+        {
+            player.message("No player found with the name '{0}'!".format(arguments[0]), "red");
+            return;
+        }
+        if (!mutes.contains(targetPlayer.id))
+        {
+            mutes.add(targetPlayer.id);
+            saveMuteList(mutes);
+            player.message("{0} has been muted.".format(targetPlayer.name), "green");
+        }
+        else
+        {
+            player.message("{0} is already muted.".format(targetPlayer.name), "yellow");
+        }
+    }
+}
+
+command unmute()
+{
+    permission = "muteSystem.unmute";
+    execute(){
+        if (arguments[0] == null)
+        {
+            player.message("Correct Usage: /unmute <player>", "red");
+            return;
+        }
+        targetPlayer = toPlayer(arguments[0]);
+        if (targetPlayer == null)
+        {
+            player.message("No player found with the name '{0}'!".format(arguments[0]), "red");
+            return;
+        }
+        if (mutes.contains(targetPlayer.id))
+        {
+            mutes.remove(targetPlayer.id);
+            saveMuteList(mutes);
+            player.message("{0} has been unmuted.".format(targetPlayer.name), "green");
+        }
+        else
+        {
+            player.message("{0} is not muted.".format(targetPlayer.name), "yellow");
+        }
+    }
+}
+
+event onLoad(){
+    ensureFileExists(muteFilePath);
+    mutes = loadMuteList();
+}
+
+event onPlayerChatted(player, message, chatMode, color, cancel){
+    if (mutes.contains(player.id))
+    {
+        cancel = true;
+        player.message("You are muted!", "red");
+    }
+}
+
+function ensureFileExists(path){
+    content = file.read(path);
+    if (content == null or content == ""){
+        file.writeAll(path, "");
+    }
+}
+
+function loadMuteList(){
+    content = file.read(muteFilePath);
+    if (content == null or content == ""){
+        return [];
+    }
+    muteArray = [];
+    contentArray = content.split(", ");
+    foreach (item in contentArray)
+    {
+        if (item != "")
+        {
+            muteArray.add(item);
+        }
+    }
+    return muteArray;
+}
+
+function saveMuteList(mutes){
+    file.writeAll(muteFilePath, mutes.join(", "));
+}
+
+event onInterval(5){
+    mutes = loadMuteList();
+}
