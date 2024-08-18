@@ -1,35 +1,82 @@
 /* 
     Simple Private Messages by Tanese
     =================================
-    Very simple and useful.
+    Very simple and useful. Allows players to reply to others aswell (Thanks for the idea Hath).
 
     =======
     Command
     =======
     /pm <player> <message>
     Permission: pm
+
+    /reply <message>
+    Permission: pm
 */
 
 /* Configuration */
 logging = true; // Set to false if you don't want to log player's private messages
 
-command pm(){
+lastSender = { };
+
+command pm()
+{
     permission = "pm";
     execute(){
-        if (arguments.count < 2){
+        if (arguments[0] == null)
+        {
             player.message("Wrong Usage! Correct Usage: /pm <player> <message>", "red");
             return;
         }
         target = toPlayer(arguments[0]);
-        if(target == null){
+        if (target == null)
+        {
             player.message("No player found!", "red");
+            return;
+        }
+        if (arguments[2] == null)
+        {
+            player.message("Wrong Usage! Correct Usage: /pm <player> <message>", "red");
             return;
         }
         message = arguments.skip(1).join(" ");
         target.message("{0} has sent you a private message! Message: {1}".format(player.name, message), "yellow");
         player.message("Message successfully sent to {0}".format(target.name), "green");
-        if(logging){
+        lastSender[target.id] = player.id;
+        if (logging)
+        {
             logger.log("{0} has sent a private message to {1}. Message: {2}".format(player.name, target.name, message));
+        }
+    }
+}
+
+command reply()
+{
+    permission = "pm";
+    execute(){
+        if (arguments[0] == null)
+        {
+            player.message("Wrong Usage! Correct Usage: /reply <message>", "red");
+            return;
+        }
+        lastSenderId = lastSender[player.id];
+        if (lastSenderId == null)
+        {
+            player.message("No one to reply to!", "red");
+            return;
+        }
+        target = toPlayer(lastSenderId);
+        if (target == null)
+        {
+            player.message("The player you are trying to reply to is not online!", "red");
+            return;
+        }
+        message = arguments.join(" ");
+        target.message("{0} has replied to your message! Message: {1}".format(player.name, message), "yellow");
+        player.message("Reply successfully sent to {0}".format(target.name), "green");
+        lastSender[target.id] = player.id;
+        if (logging)
+        {
+            logger.log("{0} has replied to {1}. Message: {2}".format(player.name, target.name, message));
         }
     }
 }
