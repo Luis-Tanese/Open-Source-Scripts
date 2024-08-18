@@ -1,0 +1,33 @@
+/* 
+    Simple Private Messages by Tanese
+    =================================
+    Very simple and made quickly.
+
+    =======
+    Command
+    =======
+    /pm <player> <message>
+    Permission: pm
+*/
+
+command pm(){
+    permission = "pm";
+    execute(){
+        if (arguments[0] == null){
+            player.message("Wrong Usage! Correct Usage: /pm <player> <message>", "red");
+            return;
+        }
+        target = toPlayer(arguments[0]);
+        if(target == null){
+            player.message("No player found!", "red");
+            return;
+        }
+        if(arguments[2] == null){
+            player.message("Wrong Usage! Correct Usage: /pm <player> <message>", "red");
+            return;
+        }
+        message = arguments.skip(1).join(" ");
+        target.message("{0} has sent you a private message! Message: {1}".format(player.name, message), "yellow");
+        player.message("Message successfully sent to {0}".format(target.name), "green");
+    }
+}
