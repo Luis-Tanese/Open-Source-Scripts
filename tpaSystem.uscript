@@ -1,0 +1,154 @@
+/*
+    TPA System by Tanese
+    ====================
+    This script allows players to request teleportation to other players. 
+    The target player can accept, deny, or cancel the teleport request.
+
+    =========
+    Commands
+    =========
+    /tpa <player> - Sends a teleport request to the specified player.
+    /tpa <a/d/c> - Accepts (a), denies (d), or cancels (c) a teleport request.
+    Permission: TPASystem.tpa
+*/
+
+/* Configuration */
+tpaDelay = 10;
+
+tpaRequests = map(); 
+sillyActions = ["a", "d", "c"];
+
+command tpa(action){
+    permission = "TPASystem.tpa";
+    execute(){
+        if(action == null){
+            player.message("Wrong Usage! Correct Usage: /tpa <player/a/d/c>", "red");
+            return;
+        }
+        action = action.toLower();
+        if(sillyActions.contains(action)){
+            handleTpaAction(action, player);
+            return;
+        }
+        target = toPlayer(action);
+        if(target == null){
+            player.message("No player found!", "red");
+            return;
+        }
+        if(player.id == target.id){
+            player.message("You can't send a TPA request to yourself!", "red");
+            return;
+        }
+        if(tpaRequests.containsKey(player.id)){
+            player.message("You already have an active TPA request!", "yellow");
+            return;
+        }
+        tpaRequests.set(player.id, { "Target": target.id, "Status": "pending" });
+        player.message("TPA request sent to {0}".format(target.name), "green");
+        target.message("{0} has requested to teleport to you. Use /tpa a to accept or /tpa d to deny.".format(player.name), "yellow");
+        wait.seconds(30, checkTpaTimeout, player.id);
+    }
+}
+
+function handleTpaAction(action, player){
+    if(action == "a"){
+        requesterId = findRequester(player.id);
+        if(requesterId == null){
+            player.message("No active TPA request found.", "red");
+            return;
+        }
+        tpaRequest = tpaRequests.get(requesterId);
+        if(tpaRequest["Status"] == "accepted"){
+            player.message("You already accepted this TPA request.", "yellow");
+            return;
+        }
+        tpaRequest["Status"] = "accepted";
+        tpaRequests.set(requesterId, tpaRequest);
+        
+        requester = toPlayer(requesterId);
+        if(requester != null){
+            requester.message("{0} has accepted your TPA request. Teleporting in {1} seconds...".format(player.name, tpaDelay), "green");
+            player.message("You have accepted the TPA request. Teleporting {0} in {1} seconds...".format(requester.name, tpaDelay), "green");
+            wait.seconds(tpaDelay, teleportPlayer, requesterId, player.id);
+        }
+        else{
+            player.message("The player who sent the request is no longer online.", "red");
+            tpaRequests.remove(requesterId);
+        }
+    }
+    else if(action == "d"){
+        requesterId = findRequester(player.id);
+        if(requesterId == null){
+            player.message("No active TPA request found.", "red");
+            return;
+        }
+        requester = toPlayer(requesterId);
+        if(requester != null){
+            requester.message("{0} has denied your TPA request.".format(player.name), "red");
+        }
+        player.message("You have denied the TPA request.", "yellow");
+        tpaRequests.remove(requesterId);
+    }
+    else if(action == "c"){
+        if(tpaRequests.containsKey(player.id)){
+            targetId = tpaRequests.get(player.id)["Target"];
+            target = toPlayer(targetId);
+            if(target != null){
+                target.message("{0} has cancelled the TPA request.".format(player.name), "yellow");
+            }
+            player.message("You have cancelled the TPA request.", "yellow");
+            tpaRequests.remove(player.id);
+        }
+        else{
+            requesterId = findRequester(player.id);
+            if(requesterId != null){
+                requester = toPlayer(requesterId);
+                if(requester != null){
+                    requester.message("{0} has cancelled the TPA request.".format(player.name), "yellow");
+                }
+                player.message("You have cancelled the TPA request.", "yellow");
+                tpaRequests.remove(requesterId);
+            }
+            else{
+                player.message("No active TPA request found.", "red");
+            }
+        }
+    }
+}
+
+function teleportPlayer(requesterId, targetId){
+    if(!tpaRequests.containsKey(requesterId) or tpaRequests.get(requesterId)["Status"] != "accepted"){
+        return;
+    }
+    requester = toPlayer(requesterId);
+    target = toPlayer(targetId);
+    if(requester != null and target != null){
+        requester.teleport(target.position);
+        requester.message("You have been teleported to {0}.".format(target.name), "green");
+    }
+    tpaRequests.remove(requesterId);
+}
+
+function checkTpaTimeout(requesterId){
+    if(tpaRequests.containsKey(requesterId) and tpaRequests.get(requesterId)["Status"] == "pending"){
+        targetId = tpaRequests.get(requesterId)["Target"];
+        requester = toPlayer(requesterId);
+        target = toPlayer(targetId);
+        if(requester != null){
+            requester.message("Your TPA request to {0} has timed out.".format(target != null ? target.name : "the player"), "red");
+        }
+        if(target != null){
+            target.message("The TPA request from {0} has timed out.".format(requester != null ? requester.name : "the player"), "red");
+        }
+        tpaRequests.remove(requesterId);
+    }
+}
+
+function findRequester(targetId){
+    foreach(key in tpaRequests.keys){
+        if(tpaRequests.get(key)["Target"] == targetId){
+            return key;
+        }
+    }
+    return null;
+}
