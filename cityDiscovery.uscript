@@ -1,0 +1,65 @@
+/* 
+    City Discovery by Tanese
+    ========================
+    This script displays a UI popup with the name of a city or area when a player enters a specific zone from a predefined list of cities and hides it after some time.
+    If you have any questions on how to set it up, please direct message me on discord @ tanese or join our support server here: https://discord.gg/vVxYwJz6Hy.
+
+    ==========================
+    Plugins Needed (RocketMod)
+    ==========================
+    - AdvancedZones by Game4Freak: https://github.com/Game4Freak/AdvancedZones/releases/tag/1.0.0
+
+    =======================================
+    Modules Needed (Download from releases)
+    =======================================
+    - uAdvancedZones by Tanese: https://github.com/Luis-Tanese/uAdvancedZones
+    - EffectManagerExtended by RiceField-Plugins: https://github.com/RiceField-Plugins/EffectManagerExtended-uScript
+
+    ===========
+    Mod Needed
+    ===========
+    - City Discovery UI by Tanese: https://steamcommunity.com/sharedfiles/filedetails/?id=3307073719
+*/
+
+/* Configuration */
+
+Cities = { // First is the name of your zone, second is the welcome message to the city (You can have as many as you want)
+    "ZoneA": "Welcome to Mount Silly!",
+    "ZoneB": "Welcome to Bay Zone!",
+    "ZoneC": "Welcome to City Alpha!"
+};
+
+/* Code (Do not change anything from here if you don't know what you're doing!) */
+
+event onPlayerEnterAdvancedZone(player, zonename, position) 
+{
+    if (Cities.containsKey(zonename))
+    {
+        showCityZoneUI(player, Cities.get(zonename));
+        scheduleHideCityZoneUI(player);
+    }
+}
+
+event onLoad()
+{
+    logger.log("City Discovery UI by Tanese Successfully Loaded!");
+}
+
+cityZoneUIId = 5050;
+
+function showCityZoneUI(player, text) 
+{
+    playerId = player.id;
+    player.effects.sendUI(cityZoneUIId, cityZoneUIId);
+    EffectManagerExtended.setText(playerId, cityZoneUIId, "zoneName", text);
+}
+
+function hideCityZoneUI(player) 
+{
+    player.effects.clearUIById(cityZoneUIId);
+}
+
+function scheduleHideCityZoneUI(player) 
+{
+    wait.seconds(8, hideCityZoneUI, player);
+}
