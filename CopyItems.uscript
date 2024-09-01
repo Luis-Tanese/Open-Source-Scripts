@@ -1,0 +1,35 @@
+/* 
+    Copy Items Script by Tanese
+    ===========================
+    Pretty simple qol script I made because I was using it to test sumn; It copies any barricade/structure you're looking atand gives you the amount you wanted
+
+    ========
+    Command
+    ========
+    /copyitem amount
+    Permission: admin
+*/
+
+command copyitem(Amount){
+    permission = "womp";
+    execute(){
+        if(Amount == null){
+            player.message("Wrong Usage! Correct Usage: /copyitem <amount>");
+            return;
+        }
+        structure = player.look.getStructure();
+        barricade = player.look.getBarricade();
+        if(barricade == null and structure == null){
+            player.message("You have to be looking at a structure or barricade to use this command!");
+            return;
+        }
+        if(barricade != null){
+            player.inventory.addItem(barricade.id, Amount.toNumber());
+            return;
+        }
+        if(structure != null){
+            player.inventory.addItem(structure.id, Amount.toNumber());
+            return;
+        }
+    }
+}
