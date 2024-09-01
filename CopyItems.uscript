@@ -14,8 +14,7 @@ command copyitem(Amount){
     permission = "womp";
     execute(){
         if(Amount == null){
-            player.message("Wrong Usage! Correct Usage: /copyitem <amount>");
-            return;
+            Amount = "1";
         }
         structure = player.look.getStructure();
         barricade = player.look.getBarricade();
