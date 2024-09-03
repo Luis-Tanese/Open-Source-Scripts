@@ -10,11 +10,14 @@
     Permission: admin
 */
 
-command copyitem(Amount){
+command copyitem(){
     permission = "womp";
     execute(){
-        if(Amount == null){
+        if(arguments[0] == null){
             Amount = "1";
+        }
+        if(arguments[0] != null){
+            Amount = arguments[0];
         }
         structure = player.look.getStructure();
         barricade = player.look.getBarricade();
