@@ -22,7 +22,7 @@ event onInterval(1) {
         respawnTime = protectedPlayers.get(playerId);
         if (currentTime - respawnTime > protectionTime)
         {
-            player = server.findPlayer(playerId);
+            player = toPlayer(playerId);
             if (player != null)
             {
                 player.setData("isProtected", false);
