@@ -1,11 +1,15 @@
 /* 
+    =======================
     uScript Zones by Tanese
+    =======================
+    V1.0.0
     =======================
     This is a simple zoning script that a user can set their coordinates into the nodes of each zone with the vector3 of the player. 
     To get the vector3 of the player, use the command /checkposition and check console for your information on the point you are standing. 
     In a future update I might add a command to set zones and delete them aswell as fix the one to put signs. 
     You can add as many zones with as many nodes you want, just dont add too many to not overload the server. :)
     For now that's it.
+    
     You can implement it in other scripts by just getting the player data "zone" and getting the zone name for it.
     Example:
     if (player.getData("zone") == "Zone1"){
