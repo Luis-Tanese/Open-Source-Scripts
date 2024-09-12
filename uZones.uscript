@@ -1,0 +1,193 @@
+/* 
+    uScript Zones by Tanese
+    =======================
+    This is a simple zoning script that a user can set their coordinates into the nodes of each zone with the vector3 of the player. 
+    To get the vector3 of the player, use the command /checkposition and check console for your information on the point you are standing. 
+    In a future update I might add a command to set zones and delete them aswell as fix the one to put signs. For now that's it.
+    You can implement it in other scripts by just getting the player data "zone" and getting the zone name for it.
+    Example:
+    if (player.getData("zone") == "Zone1"){
+        // do something
+    }
+
+    ======================================
+    Module Needed (Download from releases)
+    ======================================
+    - uScriptExtended by MolyiEZ: https://github.com/MolyiEZ/uScriptExtended
+
+    ======================
+    Commands:
+    ======================
+	- /checkposition: Prints your position to the console and player so you can set your nodes
+	  Permission: uZones.checkpos
+    
+    - /teleportzone <playerName> <zoneName>: Teleports a player (can be you) to the first node of the zone specified 
+      Permission: uZones.teleport
+    
+    !! WIP !!
+    (Commented below if you want to try and fix it)
+    - /debugsigns <zoneName>: Puts signs at each node of the zone (Currently not working)
+      Permission: uZones.debugsigns
+*/
+
+zones = [ // Need at least 3 nodes and I recommend a max of 6 - 8 nodes
+    {
+        "zoneName": "Zone1",
+        "nodes": [
+            vector3(0, 0, 0),  // Node 1
+            vector3(10, 0, 0),  // Node 2
+            vector3(10, 0, 10), // Node 3
+            vector3(0, 0, 10)   // Node 4
+        ]
+    },
+    {
+        "zoneName": "Zone2",
+        "nodes": [
+            vector3(555.864318847656, 40.377986907959, -622.308715820313),  // Node 1
+            vector3(568.586242675781, 40.1441650390625, -609.587158203125),  // Node 2
+            vector3(588.175537109375, 37.2990760803223, -629.176452636719),  // Node 3
+            vector3(582.638671875, 34.818904876709, -648.234375)   // Node 4
+        ]
+    }
+];
+
+function isPointInZone(playerPos, zoneNodes) {
+    crossings = 0;
+    for (i = 0; i < zoneNodes.count; i++) {
+        count = i + 1;
+        nextIndex = count % zoneNodes.count;
+        node1 = zoneNodes[i];
+        node2 = zoneNodes[nextIndex];
+        isNode1Above = node1.z > playerPos.z;
+        isNode2Above = node2.z > playerPos.z;
+        if (isNode1Above != isNode2Above) {
+            zDiffPlayerNode1 = playerPos.z - node1.z;
+            xDiffNode2Node1 = node2.x - node1.x;
+            zDiffNode2Node1 = node2.z - node1.z;
+            intersectXNumerator = zDiffPlayerNode1 * xDiffNode2Node1;
+            intersectXDenominator = zDiffNode2Node1;
+            if (math.abs(intersectXDenominator) > 0) {
+                intersectXIndex = intersectXNumerator / intersectXDenominator;
+                intersectX = node1.x + intersectXIndex;
+                if (playerPos.x < intersectX) {
+                    crossings += 1;
+                }
+            }
+        }
+    }
+    womp = false;
+    wompity = crossings % 2;
+    if (wompity == 1) {
+        womp = true;
+    }
+    return womp;
+}
+
+function checkPlayerZone(player) {
+    playerPos = player.position;
+    foreach (zone in zones) {
+        if (isPointInZone(playerPos, zone["nodes"])) {
+            return zone["zoneName"];
+        }
+    }
+    return null;
+}
+
+event onPlayerPositionUpdated(player) {
+    currentZone = checkPlayerZone(player);
+    previousZone = player.getData("zone");
+    if (currentZone != null and currentZone != previousZone) {
+        // logger.log("{0} has entered zone: {1}".format(player.name, currentZone));
+        player.setData("zone", currentZone);
+        // player.message("You entered {0}".format(currentZone), "green");
+    } else if (currentZone == null and previousZone != null) {
+        // logger.log("{0} has left zone: {1}".format(player.name, previousZone));
+        player.setData("zone", null);
+        // player.message("You left {0}".format(previousZone), "red");
+    }
+}
+
+command checkposition() {
+    permission = "uZones.checkpos";
+    execute() {
+        player.message("Position: vector3(x: {0}, y: {1}, z: {2}) | Check Console to get a copy-able version".format(player.position.x, player.position.y, player.position.z));
+        player.message("Rotation: {0} | Check Console to get a copy-able version".format(player.rotation));
+        logger.log("Position: vector3(x: {0}, y: {1}, z: {2})".format(player.position.x, player.position.y, player.position.z));
+        logger.log("Rotation: {0}".format(player.rotation));
+    }
+}
+
+command teleportzone(playerName, zoneName) {
+    permission = "uZones.teleport";
+    execute() {
+        if (playerName == null or zoneName == null) {
+            player.message("Wrong Usage! Correct Usage: /teleportzone <player> <zonename>", "red");
+            return;
+        }
+        target = toPlayer(playerName);
+        if (target == null) {
+            player.message("Player not found!", "red");
+            return;
+        }
+        zoneLocation = getZoneFirstNode(zoneName);
+        if (zoneLocation == null) {
+            player.message("Zone not found!", "red");
+            return;
+        }
+        target.teleport(zoneLocation);
+        player.message("Teleported {0} to {1}'s first node.".format(target.name, zoneName), "green");
+        target.message("You have been teleported to {0}'s first node.".format(zoneName), "green");
+    }
+}
+
+function getZoneFirstNode(zoneName) {
+    foreach (zone in zones) {
+        if (zone["zoneName"] == zoneName) {
+            return zone["nodes"][0];
+        }
+    }
+    return null;
+}
+
+/* zoneSigns = map();
+
+command debugsigns(zoneName) {
+    permission = "uZones.debugsigns";
+    execute() {
+        zone = null;
+        foreach (z in zones) {
+            if (z["zoneName"] == zoneName) {
+                zone = z;
+                break;
+            }
+        }
+        if (zone == null) {
+            player.message("Zone not found!", "red");
+            return;
+        }
+        if (zoneSigns.containsKey(zoneName)) {
+            logger.log(zoneSigns[zoneName]);
+            logger.log(zoneName);
+            logger.log(zoneSigns.keys);
+            foreach (instanceId in zoneSigns[zoneName]) {
+                barricadeToRemove = server.findBarricade(instanceId);
+                if (barricadeToRemove != null) {
+                    barricadeToRemove.destroy();
+                }
+            }
+            zoneSigns.remove(zoneName);
+            player.message("Signs for {0} have been removed.".format(zoneName), "green");
+            return;
+        }
+        zoneSignList = [];
+        foreach (node in zone["nodes"]) {
+            barricade = spawner.spawnBarricade(1098, node);
+            if (barricade != null) {
+                barricade.sign.text = zoneName;
+                zoneSignList.add(barricade.instanceId);
+            }
+        }
+        zoneSigns.set(zoneName, zoneSignList);
+        player.message("Signs for {0} have been placed.".format(zoneName), "green");
+    }
+} */
