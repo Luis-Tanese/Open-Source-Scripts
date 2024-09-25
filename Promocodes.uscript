@@ -1,0 +1,120 @@
+/* 
+    Promocodes System by Tanese
+    ===========================
+    Back again with this silly thing. https://pastebin.com/aP3TCnV5
+*/
+
+ConfigPath = "PromocodesConfig.json";
+Codes = [];
+
+event onLoad() {
+    LoadPromocodes();
+    logger.log("Promocode System by Tanese Loaded.");
+    codesExpired = 0;
+    codesLoaded = 0;
+    foreach (promo in Codes) {
+        if (promo["isCodeActive"]) {
+            codesLoaded =+ 1;
+        } else {
+            codesExpired =+ 1;
+        }
+    }
+}
+
+function LoadPromocodes() {
+    Data = file.read(ConfigPath);
+    if (Data == "") {
+        Codes = [];
+        SavePromocodes();
+    } else {
+        Codes = deserialize(Data);
+    }
+}
+
+function SavePromocodes() {
+    jsonData = Codes.serialize();
+    file.writeAll(ConfigPath, jsonData);
+}
+
+function FindPromocode(code) {
+    foreach (promo in Codes) {
+        if (promo["Code"] == code) {
+            return promo;
+        }
+    }
+    return null;
+}
+
+command savecodes() {
+    permission = "promocodes.admin";
+    allowedCaller = "both";
+    execute() {
+        LoadPromocodes();
+    }
+}
+
+command claimcode() {
+    permission = "promocodes.use";
+    execute() {
+        if (arguments.count < 1) {
+            player.message("Please specify a code!", "red");
+            return;
+        }
+        codeToClaim = arguments[0];
+        promo = FindPromocode(codeToClaim);
+        if (promo == null) {
+            player.message("This code does not exist!", "red");
+            return;
+        }
+        if (!promo["isCodeActive"]) {
+            player.message("This code is expired!", "yellow");
+            return;
+        }
+        if (promo["Permission"] != "" and !player.hasPermission(promo["Permission"])) {
+            player.message("You don't have permission to use this code!", "yellow");
+            return;
+        }
+        if (promo["UsedBy"].contains(player.id)) {
+            player.message("You have already claimed this code!", "yellow");
+            return;
+        }
+        if (promo.containsKey("MaxUsages") and promo["UsedBy"].count >= promo["MaxUsages"]) {
+            promo["isCodeActive"] = false;
+            SavePromocodes();
+            player.message("This code has reached its usage limit.", "red");
+            return;
+        }
+        if (promo["GiveExp"]) {
+            player.experience += promo["ExpAmount"];
+        }
+        if (promo["GiveReputation"]) {
+            player.reputation += promo["ReputationAmount"];
+        }
+        if (promo["GiveItems"]) {
+            foreach (item in promo["ItemIDs"]) {
+                player.inventory.addItem(item["ItemId"], item["Amount"]);
+            }
+        }
+        promo["UsedBy"].add(player.id);
+        SavePromocodes();
+        player.message("You have successfully claimed the code: {0}".format(promo["CodeName"]), "green");
+        if (promo["UsedBy"].count >= promo["MaxUsages"]) {
+            promo["isCodeActive"] = false;
+            SavePromocodes();
+            logger.log("Code {0} has reached its usage limit and is now deactivated.".format(promo["Code"]), "yellow");
+        }
+    }
+}
+
+event onInterval(1) {
+    foreach (promo in Codes) {
+        if (promo["isCodeActive"] and promo.containsKey("ExpireTime")) {
+            promo["ExpireTime"] -= 1;
+            if (promo["ExpireTime"] <= 0) {
+                promo["isCodeActive"] = false;
+                logger.log("Code {0} has expired.".format(promo["Code"]));
+            }
+        }
+    }
+    SavePromocodes();
+}
