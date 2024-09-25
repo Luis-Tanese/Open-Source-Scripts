@@ -1,7 +1,35 @@
 /* 
     Promocodes System by Tanese
     ===========================
-    Back again with this silly thing. https://pastebin.com/aP3TCnV5
+    Back again with silly scripts. This time it is a promocode system.
+
+    ===============
+    How to use:
+    ===============
+    First, create a file called "PromocodesConfig.json" on U3DS/Servers/YourServer/uScript/Data
+    Then load the script normally.
+    Now after the script is loaded you can create your first code; 
+    Follow this example on how the config looks like: https://pastebin.com/aP3TCnV5
+    After making your code, do the command: /savecodes to save the codes in the sript instance.
+
+    Explanation:
+    "Code" is the code the players have to put in. (Note: Codes are case sensitive).
+    "CodeName" is like the name of the code, purely cosmetic but has to be there.
+    "isCodeActive" always leave on true, the code will automatically set it to false when it either expires or the max usages hits the limit.
+    "MaxUsages" is the maximum amount of usages the code can be used; Set to 100000 if you want it to have a lot of uses.
+    "Permission" is the permission needed to use that code; leave "promocodes.use" as default use.
+    "ExpireTime" is the amount of time in seconds the code will be active; it will tick down in real time, so if it is lower then what you put it, thats the reason.
+    "UsedBy" is an array to save all the players's ids so that they can't use it again. Leave blank when setting a code
+    The rest is pretty self explanatory.
+
+    ===============
+    Commands
+    ===============
+    /savecodes: Saves the codes from the json file and puts them in the script intance
+    Permission: promocodes.admin
+
+    /redeem <code>: redeems a code; Self explanatory
+    Permission: promocodes.use
 */
 
 ConfigPath = "PromocodesConfig.json";
@@ -53,7 +81,7 @@ command savecodes() {
     }
 }
 
-command claimcode() {
+command redeem() {
     permission = "promocodes.use";
     execute() {
         if (arguments.count < 1) {
