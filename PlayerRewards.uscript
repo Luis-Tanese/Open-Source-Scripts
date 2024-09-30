@@ -1,0 +1,244 @@
+/* 
+    Player Reward System by Tanese
+    ==============================
+    This script allows players to claim daily, weekly, and monthly rewards, which can include items, experience and reputation.
+
+    ===============
+    How to use:
+    ===============
+    1. Create the necessary config file:
+        - Create a file called "RewardConfig.json" and "PlayerRewardData.json" in the directory: U3DS/Servers/YourServer/uScript/Data.
+        - After loading the script, this file will be used to configure rewards, cooldowns, and the reward chances.
+
+    2. Configuration Example:
+        The config file allows you to define rewards for daily, weekly, and monthly claims. Each reward has a type, description, chance of being selected, and other relevant details.
+
+    3. Explanation of the Fields:
+        - type: Type of reward. Can be "item", "experience" and "reputation".
+        - description: A cosmetic description of the reward.
+        - itemId: The ID of the item (only used when type is `item`).
+        - amount: Number of items or value of the reward (depends on the type).
+        - chance: The percentage chance of receiving the reward when claimed.
+        - cooldown: Time in seconds before the player can claim this reward again.
+
+    ===============
+    Commands:
+    ===============
+    - /claim <daily|weekly|monthly>: Allows players to claim their rewards based on the type (daily, weekly, or monthly).
+        - Permission: player.rewards
+    If the player is still on cooldown, the script will return the time left in the format 24:56:47 (HH:MM:SS).
+
+    ===============
+    Adding More Rewards:
+    ===============
+    - You can modify the config file to include different items, experience, or reputation amounts.
+
+    ===============
+    Cooldown Management:
+    ===============
+    Each reward type (daily, weekly, monthly) has its cooldown defined in seconds in the config file. For example, a daily reward will have a cooldown of 86400 seconds (24 hours), while a weekly reward has 604800 seconds (7 days).
+
+    ===============
+    Customization:
+    ===============
+    You can adjust the rewards, chances, and cooldowns to suit your server's needs. Players are notified when they can claim rewards, and if they attempt to claim while on cooldown, the remaining time is displayed in the HH:MM:SS format.
+*/
+
+RewardDataFilePath = "PlayerRewardData.json";
+ConfigFilePath = "RewardConfig.json";
+
+PlayerRewardData = [];
+RewardConfig = [];
+
+event onLoad() {
+    LoadConfig();
+    LoadRewardData();
+    logger.log("Reward System Loaded!");
+}
+
+function LoadConfig() {
+    jsonData = file.read(ConfigFilePath);
+    if (jsonData == "") {
+        RewardConfig = {
+        "rewards": {
+            "daily": {
+                "cooldown": 86400,
+                "rewards": [
+                    {
+                        "type": "item",
+                        "description": "EagleFire",
+                        "itemId": 4,
+                        "amount": 1,
+                        "chance": 40
+                    },
+                    {
+                        "type": "experience",
+                        "description": "500 Experience",
+                        "expAmount": 500,
+                        "chance": 30
+                    },
+                    {
+                        "type": "reputation",
+                        "description": "10 Reputation",
+                        "repAmount": 10,
+                        "chance": 30
+                    }
+                ]
+            },
+            "weekly": {
+                "cooldown": 604800,
+                "rewards": [
+                    {
+                        "type": "experience",
+                        "description": "2000 Experience",
+                        "expAmount": 2000,
+                        "chance": 40
+                    },
+                    {
+                        "type": "item",
+                        "description": "Dragon Fang",
+                        "itemId": 132,
+                        "amount": 1,
+                        "chance": 35
+                    }
+                ]
+            },
+            "monthly": {
+                "cooldown": 2592000,
+                "rewards": [
+                    {
+                        "type": "item",
+                        "description": "Grenade",
+                        "itemId": 254,
+                        "amount": 30,
+                        "chance": 50
+                    }
+                ]
+            }
+        }
+    };
+    SaveConfig();
+    } else {
+        RewardConfig = deserialize(jsonData);
+    }
+}
+
+function SaveConfig() {
+    jsonData = RewardConfig.serialize();
+    file.writeAll(ConfigFilePath, jsonData);
+}
+
+function LoadRewardData() {
+    jsonData = file.read(RewardDataFilePath);
+    if (jsonData == "") {
+        PlayerRewardData = [];
+        SaveRewardData();
+    } else {
+        PlayerRewardData = deserialize(jsonData);
+    }
+}
+
+function SaveRewardData() {
+    jsonData = PlayerRewardData.serialize();
+    file.writeAll(RewardDataFilePath, jsonData);
+}
+
+function GetPlayerRewardData(player) {
+    foreach (entry in PlayerRewardData) {
+        if (entry["PlayerID"] == player.id) {
+            return entry;
+        }
+    }
+    newEntry = {
+        "PlayerID": player.id,
+        "dailyCooldown": 0,
+        "weeklyCooldown": 0,
+        "monthlyCooldown": 0
+    };
+    PlayerRewardData.add(newEntry);
+    SaveRewardData();
+    return newEntry;
+}
+
+function CanClaimReward(player, rewardType) {
+    rewardData = GetPlayerRewardData(player);
+    currentTime = time.now.totalSeconds;
+    if (rewardData[rewardType + "Cooldown"] > currentTime) {
+        timeLeft = rewardData[rewardType + "Cooldown"] - currentTime;
+        formattedTime = FormatTime(timeLeft);
+        player.message("You can claim your next " + rewardType + " reward in: " + formattedTime, "red");
+        return false;
+    }
+    return true;
+}
+
+function ClaimReward(player, rewardType) {
+    if (!CanClaimReward(player, rewardType)) return;
+    rewardData = GetPlayerRewardData(player);
+    rewardSet = RewardConfig["rewards"][rewardType];
+    reward = GetRandomReward(rewardSet["rewards"]);
+    if (reward != null) {
+        if (reward["type"] == "item") {
+            player.inventory.addItem(reward["itemId"], reward["amount"]);
+            player.message("You received: " + reward["description"], "green");
+        } else if (reward["type"] == "experience") {
+            player.experience += reward["expAmount"];
+            player.message("You received: " + reward["expAmount"] + " Experience", "green");
+        } else if (reward["type"] == "reputation") {
+            player.reputation += reward["repAmount"];
+            player.message("You received: " + reward["repAmount"] + " Reputation", "green");
+        }
+    } else {
+        player.message("No rewards available.", "red");
+    }
+    rewardData[rewardType + "Cooldown"] = time.now.totalSeconds + rewardSet["cooldown"];
+    SaveRewardData();
+}
+
+function GetRandomReward(rewards) {
+    totalChance = 0;
+    foreach (reward in rewards) {
+        totalChance += reward["chance"];
+    }
+    randomic = random();
+    randomValue = randomic.int(0, totalChance + 1);
+    currentChance = 0;
+    foreach (reward in rewards) {
+        currentChance += reward["chance"];
+        if (randomValue < currentChance) {
+            return reward;
+        }
+    }
+    return null;
+}
+
+function pad(value) {
+    if (value < 10) {
+        return "0" + value.toString();
+    }
+    return value.toString();
+}
+
+function FormatTime(seconds) {
+    hours = math.floor(seconds / 3600);
+    womp = math.floor(seconds % 3600);
+    minutes = math.floor(womp / 60);
+    seconds = seconds % 60;
+    return "{0}:{1}:{2}".format(pad(hours), pad(minutes), pad(seconds));
+}
+
+command claim() {
+    permission = "player.rewards";
+    execute() {
+        if (arguments.count < 1) {
+            player.message("Usage: /claim <daily|weekly|monthly>", "red");
+            return;
+        }
+        rewardType = arguments[0].toLower();
+        if (rewardType == "daily" or rewardType == "weekly" or rewardType == "monthly") {
+            ClaimReward(player, rewardType);
+        } else {
+            player.message("Invalid reward type. Use: daily, weekly, or monthly.", "red");
+        }
+    }
+}
