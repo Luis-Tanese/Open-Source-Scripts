@@ -1,0 +1,381 @@
+/*
+    Silly Kit System by Tanese
+    ===========================
+    This script provides a system for creating, managing, and claiming kits in your server. 
+    Kits are customizable and can include cooldowns, usage limits, permissions, and metadata-based items.
+    Feel free to message me in discord @ tanese about any issues from this
+
+    ===========================
+    Modules Needed:
+    ===========================
+    (Download from releases)
+    - MetadataChecker by realtrollman2319 a.k.a souschefroman : https://github.com/realtrollman2319/MetadataChecker
+
+    ===========================
+    How to use:
+    ===========================
+    1. Creating Files:
+        - Kits.json and PlayerKits.json:
+          Go to Servers/{yourserver}/uScript/Data and create a blank file called: Kits.json and PlayerKits.json; Otherwise the code won't work.
+    2. Admin Commands:
+        - /kitsadmin create <kitName> <coolDown> <timesCanBeUsed>
+          Creates a new kit using the items in the admin's inventory.
+          - kitName: The name of the kit.
+          - coolDown: Time in seconds before the kit can be claimed again.
+          - timesCanBeUsed: Number of times a player can claim the kit.
+
+        - /kitsadmin info <kitName>
+          Displays information about the specified kit.
+
+        - /kitsadmin info <kitName> set <kitInfo>
+          Sets or updates the info text for a specific kit.
+
+        - /kitsadmin remove <kitName>
+          Removes the specified kit.
+
+        - /kitsjson reload
+          Reloads the Kits.json file if you made any changes to it.
+
+    3. Player Commands:
+        - /kits
+          Displays a list of kits the player can access based on their permissions, along with kit info.
+
+        - /kit <kitName>
+          Allows the player to claim a specific kit if they meet the cooldown and usage conditions.
+
+    ===========================
+    Permissions:
+    ===========================
+    - SillyKits.Admin: Allows the user to create, edit, and delete kits.
+    - SillyKits.Kit.<kitName>: Grants the player access to claim the specified kit.
+
+    ===========================
+    Configuration Files:
+    ===========================
+    - Kits.json:
+      Stores all created kits, including items, cooldowns, and usage limits. You can edit to your liking.
+
+      Example Structure:
+      [
+          {
+              "name": "starter",
+              "cooldown": 86400,
+              "maxUses": 5,
+              "info": "Starter kit with basic items.",
+              "items": [
+                  {"itemId": 123, "amount": 1, "metadata": [], "quality": 100},
+                  {"itemId": 456, "amount": 5, "metadata": [], "quality": 0}
+              ]
+          }
+      ]
+
+    - PlayerKits.json:
+      Tracks individual player usage of kits.
+
+      Example Structure:
+      [
+          {
+              "playerId": "76561198123456789",
+              "usedKits": {
+                  "starter": {
+                      "remainingUses": 3,
+                      "lastUsed": 1695000000
+                  }
+              }
+          }
+      ]
+
+    ===========================
+    Claim Mechanics:
+    ===========================
+    - Players must wait for the cooldown period to expire before reclaiming a kit.
+    - Players can only claim a kit a specific number of times.
+
+    ===========================
+    Customization:
+    ===========================
+    - Modify translations to adjust command responses.
+    - Adjust permissions and cooldowns in Kits.json to fit server needs.
+
+    ===========================
+    Notes:
+    ===========================
+    - Kits use metadata-based items for advanced customization.
+    - Ensure permission names in the script match your server's configuration.
+*/
+
+
+kitsStorage = "Kits.json";
+playerKitsStorage = "PlayerKits.json";
+
+kits = [];
+playerKits = [];
+
+translations = [
+    "Kit {0} created successfully!",
+    "You don't have permission to create this kit.",
+    "Kit {0} doesn't exist.",
+    "Kit {0} removed successfully!",
+    "Kit info set for {0}.",
+    "Kit {0} claimed successfully!",
+    "You cannot claim {0} yet. Cooldown remaining: {1} seconds.",
+    "You have reached the maximum usage limit for {0}.",
+    "Kit {0} info: {1}",
+    "Kit {0} doesn't have any info.",
+    "Wrong usage! Correct usage: /kitsadmin create <kitName> <coolDown> <timesCanBeUsed>",
+    "Wrong usage! Correct usage: /kitsadmin info <kitName>",
+    "Wrong usage! Correct usage: /kitsadmin info <kitName> set <kitInfo>",
+    "Wrong usage! Correct usage: /kitsadmin remove <kitName>",
+    "You do not have permission to claim {0}.",
+    "Kits in file loaded successfully!",
+    "Wrong usage! Correct usage: /kit <kitName>"
+];
+
+event onLoad() {
+    LoadKits();
+    LoadPlayerKits();
+    logger.log("Silly Kits Loaded Successfully!");
+}
+
+function LoadKits() {
+    jsonData = file.read(kitsStorage);
+    if (jsonData == "") {
+        kits = [];
+    } else {
+        kits = deserialize(jsonData);
+    }
+}
+
+function SaveKits() {
+    jsonData = kits.serialize();
+    file.writeAll(kitsStorage, jsonData);
+}
+
+function LoadPlayerKits() {
+    jsonData = file.read(playerKitsStorage);
+    if (jsonData == "") {
+        playerKits = [];
+    } else {
+        playerKits = deserialize(jsonData);
+    }
+}
+
+function SavePlayerKits() {
+    jsonData = playerKits.serialize();
+    file.writeAll(playerKitsStorage, jsonData);
+}
+
+command kitsjson() {
+    permission = "SillyKits.Admin";
+    execute() {
+        LoadKits();
+        player.message(translations[15], "green");
+    }
+}
+
+command kitsadmin() {
+    permission = "SillyKits.Admin";
+    execute() {
+        if (arguments.count < 1) {
+            player.message("Wrong usage! Correct usage: /kitsadmin <create/info/remove>", "red");
+            return;
+        }
+        action = arguments[0].toLower();
+        if (action == "create") {
+            if (arguments.count < 4) {
+                player.message(translations[10], "red");
+                return;
+            }
+            kitName = arguments[1];
+            cooldown = arguments[2].toNumber();
+            maxUses = arguments[3].toNumber();
+            CreateKit(player, kitName, cooldown, maxUses);
+        } else if (action == "info") {
+            if (arguments.count == 2) {
+                kitName = arguments[1];
+                DisplayKitInfo(player, kitName);
+            } else if (arguments.count > 3 and arguments[2].toLower() == "set") {
+                kitName = arguments[1];
+                kitInfo = arguments.skip(3).join(" ");
+                SetKitInfo(player, kitName, kitInfo);
+            } else {
+                player.message(translations[11], "red");
+            }
+        } else if (action == "remove") {
+            if (arguments.count < 2) {
+                player.message(translations[13], "red");
+                return;
+            }
+            kitName = arguments[1];
+            RemoveKit(player, kitName);
+        } else {
+            player.message("Unknown command action.", "red");
+        }
+    }
+}
+
+function CreateKit(player, kitName, cooldown, maxUses) {
+    foreach (kit in kits) {
+        if (kit["name"].toLower() == kitName.toLower()) {
+            player.message("Kit {0} already exists!".format(kitName), "red");
+            return;
+        }
+    }
+
+    newKit = {
+        "name": kitName,
+        "cooldown": cooldown,
+        "maxUses": maxUses,
+        "info": "",
+        "items": []
+    };
+
+    foreach (item in player.inventory.items) {
+        newKit["items"].add({
+            "itemId": item.id,
+            "amount": item.amount,
+            "metadata": item.metadata,
+            "quality": item.quality
+        });
+    }
+
+    kits.add(newKit);
+    SaveKits();
+    player.message(translations[0].format(kitName), "green");
+}
+
+function RemoveKit(player, kitName) {
+    foreach (kit in kits) {
+        if (kit["name"].toLower() == kitName.toLower()) {
+            kits.remove(kit);
+            SaveKits();
+            player.message(translations[3].format(kitName), "green");
+            return;
+        }
+    }
+    player.message(translations[2].format(kitName), "red");
+}
+
+function DisplayKitInfo(player, kitName) {
+    foreach (kit in kits) {
+        if (kit["name"].toLower() == kitName.toLower()) {
+            if (kit["info"] == "") {
+                player.message(translations[9].format(kitName), "yellow");
+            } else {
+                player.message(translations[8].format(kitName, kit["info"]), "yellow");
+            }
+            return;
+        }
+    }
+    player.message(translations[2].format(kitName), "red");
+}
+
+function SetKitInfo(player, kitName, kitInfo) {
+    foreach (kit in kits) {
+        if (kit["name"].toLower() == kitName.toLower()) {
+            kit["info"] = kitInfo;
+            SaveKits();
+            player.message(translations[4].format(kitName), "green");
+            return;
+        }
+    }
+    player.message(translations[2].format(kitName), "red");
+}
+
+command kits() {
+    execute() {
+        availableKits = GetAvailableKits(player);
+        if (availableKits.count == 0) {
+            player.message("You do not have access to any kits.", "yellow");
+            return;
+        }
+        player.message("Available Kits:", "green");
+        foreach (kit in availableKits) {
+            kitName = kit["name"];
+            kitInfo = kit["info"] == "" ? "No info available." : kit["info"];
+            player.message("{0}: {1}".format(kitName, kitInfo), "yellow");
+        }
+    }
+}
+
+command kit() {
+    execute() {
+        if (arguments.count < 1) {
+            player.message(translations[16], "red");
+            return;
+        }
+        kitName = arguments[0].toLower();
+        ClaimKit(player, kitName);
+    }
+}
+
+
+function ClaimKit(player, kitName) {
+    foreach (kit in kits) {
+        if (kit["name"].toLower() == kitName) {
+            if (!player.hasPermission("SillyKits.Kit." + kitName)) {
+                player.message(translations[14].format(kitName), "red");
+                return;
+            }
+            playerData = GetPlayerData(player.id);
+            if (playerData["usedKits"].containsKey(kitName)) {
+                kitUsage = playerData["usedKits"][kitName];
+                if (kitUsage["remainingUses"] <= 0) {
+                    player.message(translations[7].format(kitName), "red");
+                    return;
+                }
+                if (time.now.totalSeconds - kitUsage["lastUsed"] < kit["cooldown"]) {
+                    womp = time.now.totalSeconds - kitUsage["lastUsed"];
+                    cooldownRemaining = kit["cooldown"] - womp;
+                    player.message(translations[6].format(kitName, cooldownRemaining), "red");
+                    return;
+                }
+                kitUsage["remainingUses"] -= 1;
+            } else {
+                playerData["usedKits"][kitName] = {
+                    "remainingUses": kit["maxUses"] - 1,
+                    "lastUsed": time.now.totalSeconds
+                };
+            }
+            playerData["usedKits"][kitName]["lastUsed"] = time.now.totalSeconds;
+            SavePlayerKits();
+
+            GiveKitItems(player, kit);
+            player.message(translations[5].format(kitName), "green");
+            return;
+        }
+    }
+    player.message(translations[2].format(kitName), "red");
+}
+
+function GetPlayerData(playerId) {
+    foreach (entry in playerKits) {
+        if (entry["playerId"] == playerId) {
+            return entry;
+        }
+    }
+    newEntry = {
+        "playerId": playerId,
+        "usedKits": {}
+    };
+    playerKits.add(newEntry);
+    SavePlayerKits();
+    return newEntry;
+}
+
+function GiveKitItems(player, kit) {
+    foreach (item in kit["items"]) {
+        player.giveItemMetadata(item["itemId"], item["metadata"], item["quality"], item["amount"]);
+    }
+}
+
+function GetAvailableKits(player) {
+    availableKits = [];
+    foreach (kit in kits) {
+        kitPermission = "SillyKits.Kit." + kit["name"].toLower();
+        if (player.hasPermission(kitPermission)) {
+            availableKits.add(kit);
+        }
+    }
+    return availableKits;
+}
