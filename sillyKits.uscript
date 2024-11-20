@@ -101,7 +101,7 @@
     Notes:
     ===========================
     - Kits use metadata-based items for advanced customization.
-    - Ensure permission names in the script match your server's configuration.
+    - Make sure permission names in the script match your server's configuration.
 */
 
 
