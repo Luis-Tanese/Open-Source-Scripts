@@ -17,7 +17,7 @@ vehicleData = map();
 
 event onVehicleEnter(player, vehicle, cancel) 
 {
-    vehicleId = vehicle.id;
+    vehicleId = vehicle.instanceId;
     currentTime = time.now.totalSeconds;
     vehicleData.set(vehicleId, currentTime);
 }
